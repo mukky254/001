@@ -1,4 +1,21 @@
-// QR Generator JavaScript
+const API_BASE_URL = 'https://zero0-1-r0xs.onrender.com';
+
+// Add QR code generation library fallback
+function loadQRGenerator() {
+    return new Promise((resolve, reject) => {
+        if (window.QRCode) {
+            resolve();
+            return;
+        }
+        
+        // Load QRCode library dynamically
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js';
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error('Failed to load QR generator'));
+        document.head.appendChild(script);
+    });
+}// QR Generator JavaScript
 document.addEventListener('DOMContentLoaded', async function() {
     await initializeQRGenerator();
     setupQREvents();
