@@ -1,4 +1,21 @@
-// QR Scanner JavaScript
+const API_BASE_URL = 'https://zero0-1-r0xs.onrender.com';
+
+// Add QR scanner library fallback
+function loadQRScanner() {
+    return new Promise((resolve, reject) => {
+        if (window.jsQR) {
+            resolve();
+            return;
+        }
+        
+        // Load jsQR library dynamically
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js';
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error('Failed to load QR scanner'));
+        document.head.appendChild(script);
+    });
+}// QR Scanner JavaScript
 document.addEventListener('DOMContentLoaded', async function() {
     await initializeScanner();
     setupScannerEvents();
