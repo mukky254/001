@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generate QR Code - IN Attendance System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles/dashboard.css">
+    <style>
+        /* QR Generator specific styles */
+        .qr-generator-container {
+            display: flex;
+            gap: 2rem;
+            margin-top: 1rem;
+        }
+        
+        .qr-form-section {
+            flex: 1;
+        }
+        
+        .qr-preview-section {
+            flex: 1;
+        }
+        
+        .qr-preview {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: none;
+        }
+        
+        .qr-preview.active {
+            display: block;
+        }
+        
+        #qrcode {
+            margin: 1.5rem auto;
+            display: flex;
+            justify-content: center;
+        }
+        
+        .qr-info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        
+        .qr-info-item {
+            background: #f8fafc;
+            padding: 1rem;
+            border-radius: 8px;
+        }
+        
+        .qr-info-item label {
+            display: block;
+            font-size: 0.875rem;
+            color: #64748b;
+            margin-bottom: 0.25rem;
+        }
+        
+        .qr-info-item span {
+            font-weight: 500;
+            color: #334155;
+        }
+        
+        .qr-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+            justify-content: center;
+        }
+        
+        .quick-durations {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .quick-duration-btn {
+            padding: 0.5rem 1rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 6px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .quick-duration-btn:hover {
+            border-color: #4361ee;
+            color: #4361ee;
+        }
+        
+        .recent-qr-table {
+            margin-top: 2rem;
+        }
+        
+        .status-active {
+            color: #166534;
+            background: #dcfce7;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .status-expired {
+            color: #991b1b;
+            background: #fee2e2;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        @media (max-width: 992px) {
+            .qr-generator-container {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-brand">
+                <i class="fas fa-graduation-cap"></i>
+                <span>IN Attendance</span>
+            </div>
+            <button class="sidebar-close" id="sidebarClose">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="sidebar-user">
+            <div class="user-avatar" id="userAvatar">
+                <span>LT</span>
+            </div>
+            <div class="user-info">
+                <h4 id="userName">Loading...</h4>
+                <span class="user-role" id="userRole">Lecturer</span>
+            </div>
+        </div>
+
+        <nav class="sidebar-menu">
+            <div class="menu-section">
+                <div class="menu-title">MAIN</div>
+                <a href="dashboard.html" class="menu-item">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="profile.html" class="menu-item">
+                    <i class="fas fa-user"></i>
+                    <span>My Profile</span>
+                </a>
+            </div>
+
+            <div class="menu-section">
+                <div class="menu-title">LECTURER</div>
+                <a href="qr-generator.html" class="menu-item active">
+                    <i class="fas fa-qr-code"></i>
+                    <span>Generate QR Code</span>
+                </a>
+                <a href="#" class="menu-item" onclick="viewMyQRCodes()">
+                    <i class="fas fa-list"></i>
+                    <span>My QR Codes</span>
+                </a>
+                <a href="#" class="menu-item" onclick="viewAttendanceReports()">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Attendance Reports</span>
+                </a>
+                <a href="#" class="menu-item" onclick="viewMyClasses()">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                    <span>My Classes</span>
+                </a>
+            </div>
+
+            <div class="menu-section">
+                <div class="menu-title">ACCOUNT</div>
+                <a href="#" class="menu-item" onclick="changePassword()">
+                    <i class="fas fa-key"></i>
+                    <span>Change Password</span>
+                </a>
+                <a href="#" class="menu-item" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <button class="menu-toggle" id="menuToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="page-title">
+                    <h1>Generate QR Code</h1>
+                    <small>Create attendance QR codes for your classes</small>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="header-actions">
+                    <button class="header-btn" onclick="window.location.href='dashboard.html'">
+                        <i class="fas fa-tachometer-alt"></i> Dashboard
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Content Area -->
+        <div class="content-area">
+            <div class="container-fluid">
+                <!-- Quick Durations -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Quick Duration</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="quick-durations">
+                            <button class="quick-duration-btn" data-duration="5">5 min</button>
+                            <button class="quick-duration-btn" data-duration="15">15 min</button>
+                            <button class="quick-duration-btn" data-duration="30">30 min</button>
+                            <button class="quick-duration-btn" data-duration="60">60 min</button>
+                            <button class="quick-duration-btn" data-duration="90">90 min</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="qr-generator-container">
+                    <!-- QR Form -->
+                    <div class="qr-form-section">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">Create QR Code</h3>
+                            </div>
+                            <div class="card-body">
+                                <form id="qrGenerationForm">
+                                    <div class="form-group">
+                                        <label for="unitName">Unit/Subject Name *</label>
+                                        <input type="text" id="unitName" class="form-control" 
+                                               placeholder="e.g., Database Systems" required>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="unitCode">Unit Code *</label>
+                                        <input type="text" id="unitCode" class="form-control" 
+                                               placeholder="e.g., CS301" required>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="classType">Class Type</label>
+                                        <select id="classType" class="form-control">
+                                            <option value="lecture">Lecture</option>
+                                            <option value="tutorial">Tutorial</option>
+                                            <option value="lab">Lab</option>
+                                            <option value="seminar">Seminar</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="topic">Topic/Session</label>
+                                        <input type="text" id="topic" class="form-control" 
+                                               placeholder="e.g., Introduction to SQL">
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="duration">Duration (minutes) *</label>
+                                        <input type="number" id="duration" class="form-control" 
+                                               min="1" max="240" value="30" required>
+                                        <small class="text-muted">QR code will be valid for this duration</small>
+                                    </div>
+                                    
+                                    <button type="submit" class="btn btn-primary btn-block" id="generateBtn">
+                                        <i class="fas fa-qrcode"></i> Generate QR Code
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- QR Preview -->
+                    <div class="qr-preview-section">
+                        <div class="qr-preview" id="qrDisplay">
+                            <h3>QR Code Generated</h3>
+                            <div id="qrcode"></div>
+                            
+                            <div class="qr-info-grid">
+                                <div class="qr-info-item">
+                                    <label>Unit Name</label>
+                                    <span id="qrUnitName">-</span>
+                                </div>
+                                <div class="qr-info-item">
+                                    <label>Unit Code</label>
+                                    <span id="qrUnitCode">-</span>
+                                </div>
+                                <div class="qr-info-item">
+                                    <label>Class Type</label>
+                                    <span id="qrClassType">-</span>
+                                </div>
+                                <div class="qr-info-item">
+                                    <label>Topic</label>
+                                    <span id="qrTopic">-</span>
+                                </div>
+                                <div class="qr-info-item">
+                                    <label>Lecturer</label>
+                                    <span id="qrLecturer">-</span>
+                                </div>
+                                <div class="qr-info-item">
+                                    <label>Generated</label>
+                                    <span id="qrGenerated">-</span>
+                                </div>
+                                <div class="qr-info-item">
+                                    <label>Expires</label>
+                                    <span id="qrExpires">-</span>
+                                </div>
+                                <div class="qr-info-item">
+                                    <label>Duration</label>
+                                    <span id="qrDuration">-</span>
+                                </div>
+                            </div>
+                            
+                            <div class="qr-actions">
+                                <button class="btn btn-primary" id="printQRBtn">
+                                    <i class="fas fa-print"></i> Print
+                                </button>
+                                <button class="btn btn-success" id="downloadQRBtn">
+                                    <i class="fas fa-download"></i> Download
+                                </button>
+                                <button class="btn btn-info" id="shareQRBtn">
+                                    <i class="fas fa-share"></i> Share
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent QR Codes -->
+                <div class="card recent-qr-table">
+                    <div class="card-header">
+                        <h3 class="card-title">Recent QR Codes</h3>
+                        <button class="btn btn-sm btn-primary" id="refreshListBtn">
+                            <i class="fas fa-sync"></i> Refresh
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Unit Name</th>
+                                        <th>Unit Code</th>
+                                        <th>Class Type</th>
+                                        <th>Created</th>
+                                        <th>Expires</th>
+                                        <th>Attendance</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recentQRCodesBody">
+                                    <tr>
+                                        <td colspan="8" class="text-center">No QR codes generated yet</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- QR Code Library -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+
+    <script>
+        // Configuration
+        const API_BASE_URL = 'https://zero0-1-r0xs.onrender.com';
+        let currentQRCodeData = null;
+        let currentUser = null;
+
+        // DOM Ready
+        document.addEventListener('DOMContentLoaded', async function() {
+            await initializePage();
+            setupEventListeners();
+        });
+
+        async function initializePage() {
+            // Check authentication
+            const session = localStorage.getItem('attendance_session');
+            if (!session) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            try {
+                const sessionData = JSON.parse(session);
+                currentUser = sessionData.user;
+
+                // Update user info
+                document.getElementById('userName').textContent = currentUser.name;
+                document.getElementById('userRole').textContent = currentUser.role.charAt(0).toUpperCase() + currentUser.role.slice(1);
+                
+                // Set avatar
+                const avatarText = getInitials(currentUser.name);
+                document.getElementById('userAvatar').textContent = avatarText;
+
+                // Load recent QR codes
+                await loadRecentQRCodes();
+
+            } catch (error) {
+                console.error('Initialization error:', error);
+                showAlert('Failed to load page data', 'error');
+            }
+        }
+
+        function getInitials(name) {
+            return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+        }
+
+        function setupEventListeners() {
+            // Menu toggle
+            document.getElementById('menuToggle').addEventListener('click', () => {
+                document.getElementById('sidebar').classList.add('active');
+            });
+
+            document.getElementById('sidebarClose').addEventListener('click', () => {
+                document.getElementById('sidebar').classList.remove('active');
+            });
+
+            // Quick duration buttons
+            document.querySelectorAll('.quick-duration-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const duration = this.dataset.duration;
+                    document.getElementById('duration').value = duration;
+                });
+            });
+
+            // QR generation form
+            document.getElementById('qrGenerationForm').addEventListener('submit', generateQRCode);
+
+            // QR action buttons
+            document.getElementById('printQRBtn').addEventListener('click', printQRCode);
+            document.getElementById('downloadQRBtn').addEventListener('click', downloadQRCode);
+            document.getElementById('shareQRBtn').addEventListener('click', shareQRCode);
+            document.getElementById('refreshListBtn').addEventListener('click', loadRecentQRCodes);
+        }
+
+        async function generateQRCode(e) {
+            e.preventDefault();
+
+            if (!currentUser) {
+                showAlert('Please login again', 'error');
+                return;
+            }
+
+            const unitName = document.getElementById('unitName').value;
+            const unitCode = document.getElementById('unitCode').value;
+            const classType = document.getElementById('classType').value;
+            const topic = document.getElementById('topic').value;
+            const duration = parseInt(document.getElementById('duration').value);
+
+            // Validation
+            if (!unitName || !unitCode || !duration) {
+                showAlert('Please fill in all required fields', 'error');
+                return;
+            }
+
+            const generateBtn = document.getElementById('generateBtn');
+            const originalText = generateBtn.innerHTML;
+            generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+            generateBtn.disabled = true;
+
+            try {
+                const session = JSON.parse(localStorage.getItem('attendance_session'));
+                const token = session.token;
+
+                const response = await fetch(`${API_BASE_URL}/api/lecturers/generate-qr`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        unitName,
+                        unitCode,
+                        duration,
+                        classType,
+                        topic
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    currentQRCodeData = data.qrCode;
+                    
+                    // Generate visual QR code
+                    generateQRCodeVisual(data.qrCode);
+                    
+                    // Show QR code display
+                    document.getElementById('qrDisplay').classList.add('active');
+                    
+                    // Update QR code info
+                    updateQRCodeInfo(data.qrCode);
+                    
+                    // Scroll to display
+                    document.getElementById('qrDisplay').scrollIntoView({ behavior: 'smooth' });
+                    
+                    showAlert('QR code generated successfully!', 'success');
+                    
+                    // Refresh QR codes list
+                    await loadRecentQRCodes();
+                    
+                } else {
+                    throw new Error(data.message || 'Failed to generate QR code');
+                }
+
+            } catch (error) {
+                console.error('Generate QR error:', error);
+                showAlert(error.message, 'error');
+                
+                // Fallback: Create mock QR code
+                createMockQRCode(unitName, unitCode, duration, classType, topic);
+                
+            } finally {
+                generateBtn.innerHTML = originalText;
+                generateBtn.disabled = false;
+            }
+        }
+
+        function createMockQRCode(unitName, unitCode, duration, classType, topic) {
+            const mockQRData = {
+                qrCodeId: 'MOCK_' + Date.now(),
+                unitName,
+                unitCode,
+                classType,
+                topic,
+                lecturerId: currentUser.id,
+                lecturerName: currentUser.name,
+                createdAt: new Date().toISOString(),
+                expiresAt: new Date(Date.now() + duration * 60000).toISOString(),
+                duration
+            };
+
+            currentQRCodeData = mockQRData;
+            
+            // Generate visual QR code
+            generateQRCodeVisual(mockQRData);
+            
+            // Show QR code display
+            document.getElementById('qrDisplay').classList.add('active');
+            
+            // Update QR code info
+            updateQRCodeInfo(mockQRData);
+            
+            showAlert('Mock QR code created (backend offline)', 'warning');
+        }
+
+        function generateQRCodeVisual(qrData) {
+            const qrcodeContainer = document.getElementById('qrcode');
+            qrcodeContainer.innerHTML = '';
+
+            QRCode.toCanvas(qrcodeContainer, JSON.stringify(qrData), {
+                width: 250,
+                height: 250,
+                margin: 2,
+                color: {
+                    dark: '#000000',
+                    light: '#FFFFFF'
+                }
+            }, function(error) {
+                if (error) {
+                    console.error('QR code generation error:', error);
+                    // Fallback to text
+                    qrcodeContainer.innerHTML = `
+                        <div style="background:#f8f9fa; padding:20px; border-radius:8px;">
+                            <i class="fas fa-qrcode" style="font-size:48px; color:#4361ee;"></i>
+                            <p>QR Code ID: ${qrData.qrCodeId}</p>
+                        </div>
+                    `;
+                }
+            });
+        }
+
+        function updateQRCodeInfo(qrData) {
+            document.getElementById('qrUnitName').textContent = qrData.unitName;
+            document.getElementById('qrUnitCode').textContent = qrData.unitCode;
+            document.getElementById('qrClassType').textContent = qrData.classType || 'lecture';
+            document.getElementById('qrTopic').textContent = qrData.topic || 'Not specified';
+            document.getElementById('qrLecturer').textContent = qrData.lecturerName || currentUser.name;
+            document.getElementById('qrGenerated').textContent = new Date(qrData.createdAt).toLocaleString();
+            document.getElementById('qrExpires').textContent = new Date(qrData.expiresAt).toLocaleString();
+            document.getElementById('qrDuration').textContent = qrData.duration + ' minutes';
+        }
+
+        function printQRCode() {
+            if (!currentQRCodeData) {
+                showAlert('No QR code to print', 'error');
+                return;
+            }
+
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>QR Code - ${currentQRCodeData.unitName}</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 20px; text-align: center; }
+                        h1 { color: #333; margin-bottom: 20px; }
+                        .qr-info { text-align: left; max-width: 400px; margin: 20px auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
+                        .qr-info p { margin: 8px 0; }
+                        .qr-code { margin: 20px auto; }
+                        .footer { margin-top: 30px; color: #666; font-size: 14px; }
+                    </style>
+                </head>
+                <body>
+                    <h1>Attendance QR Code</h1>
+                    <div class="qr-info">
+                        <p><strong>Unit:</strong> ${currentQRCodeData.unitName}</p>
+                        <p><strong>Code:</strong> ${currentQRCodeData.unitCode}</p>
+                        <p><strong>Class Type:</strong> ${currentQRCodeData.classType}</p>
+                        <p><strong>Topic:</strong> ${currentQRCodeData.topic || 'Not specified'}</p>
+                        <p><strong>Lecturer:</strong> ${currentQRCodeData.lecturerName}</p>
+                        <p><strong>Generated:</strong> ${new Date(currentQRCodeData.createdAt).toLocaleString()}</p>
+                        <p><strong>Expires:</strong> ${new Date(currentQRCodeData.expiresAt).toLocaleString()}</p>
+                        <p><strong>Duration:</strong> ${currentQRCodeData.duration} minutes</p>
+                        <p><strong>QR Code ID:</strong> ${currentQRCodeData.qrCodeId}</p>
+                    </div>
+                    <div class="qr-code">
+                        <div style="background:#f8f9fa; padding:20px; display:inline-block; border-radius:8px;">
+                            <div style="font-size:48px; color:#4361ee;">QR CODE</div>
+                            <p>Scan this code to mark attendance</p>
+                        </div>
+                    </div>
+                    <div class="footer">
+                        <p>IN Attendance System</p>
+                    </div>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+            printWindow.print();
+        }
+
+        function downloadQRCode() {
+            if (!currentQRCodeData) {
+                showAlert('No QR code to download', 'error');
+                return;
+            }
+
+            // Create download link
+            const link = document.createElement('a');
+            link.download = `QR_${currentQRCodeData.unitCode}_${Date.now()}.txt`;
+            link.href = 'data:text/plain;charset=utf-8,' + encodeURIComponent(JSON.stringify(currentQRCodeData, null, 2));
+            link.click();
+            
+            showAlert('QR code data downloaded', 'success');
+        }
+
+        async function shareQRCode() {
+            if (!currentQRCodeData) {
+                showAlert('No QR code to share', 'error');
+                return;
+            }
+
+            const shareText = `QR Code for ${currentQRCodeData.unitName} (${currentQRCodeData.unitCode})
+Generated: ${new Date().toLocaleString()}
+Expires: ${new Date(currentQRCodeData.expiresAt).toLocaleString()}
+Duration: ${currentQRCodeData.duration} minutes
+ID: ${currentQRCodeData.qrCodeId}`;
+
+            if (navigator.share) {
+                try {
+                    await navigator.share({
+                        title: `QR Code: ${currentQRCodeData.unitName}`,
+                        text: shareText
+                    });
+                } catch (error) {
+                    // Fallback to clipboard
+                    await copyToClipboard(shareText);
+                }
+            } else {
+                await copyToClipboard(shareText);
+            }
+        }
+
+        async function copyToClipboard(text) {
+            try {
+                await navigator.clipboard.writeText(text);
+                showAlert('QR code info copied to clipboard', 'success');
+            } catch (error) {
+                showAlert('Failed to copy to clipboard', 'error');
+            }
+        }
+
+        async function loadRecentQRCodes() {
+            if (!currentUser) return;
+
+            try {
+                const session = JSON.parse(localStorage.getItem('attendance_session'));
+                const token = session.token;
+
+                const response = await fetch(`${API_BASE_URL}/api/lecturers/${currentUser.id}/qr-codes`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+                const qrCodes = data.qrCodes || [];
+
+                updateRecentQRCodesTable(qrCodes);
+
+            } catch (error) {
+                console.error('Load QR codes error:', error);
+                // Show mock data
+                showMockQRCodes();
+            }
+        }
+
+        function showMockQRCodes() {
+            const mockData = [
+                {
+                    unitName: 'Database Systems',
+                    unitCode: 'CS301',
+                    classType: 'lecture',
+                    createdAt: new Date(Date.now() - 86400000).toISOString(),
+                    expiresAt: new Date(Date.now() - 82800000).toISOString(),
+                    attendanceCount: 25,
+                    qrCodeId: 'MOCK_001'
+                },
+                {
+                    unitName: 'Web Development',
+                    unitCode: 'CS302',
+                    classType: 'lab',
+                    createdAt: new Date(Date.now() - 172800000).toISOString(),
+                    expiresAt: new Date(Date.now() - 169200000).toISOString(),
+                    attendanceCount: 18,
+                    qrCodeId: 'MOCK_002'
+                }
+            ];
+            
+            updateRecentQRCodesTable(mockData);
+        }
+
+        function updateRecentQRCodesTable(qrCodes) {
+            const tbody = document.getElementById('recentQRCodesBody');
+            
+            if (!qrCodes.length) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="text-center">No QR codes generated yet</td>
+                    </tr>
+                `;
+                return;
+            }
+
+            const rows = qrCodes.map(qr => {
+                const isActive = new Date(qr.expiresAt) > new Date();
+                const created = new Date(qr.createdAt);
+                const expires = new Date(qr.expiresAt);
+                
+                return `
+                    <tr>
+                        <td>${qr.unitName || '-'}</td>
+                        <td>${qr.unitCode || '-'}</td>
+                        <td>${qr.classType || 'lecture'}</td>
+                        <td>${created.toLocaleDateString()} ${created.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</td>
+                        <td>${expires.toLocaleDateString()} ${expires.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</td>
+                        <td>${qr.attendanceCount || 0}</td>
+                        <td>
+                            <span class="${isActive ? 'status-active' : 'status-expired'}">
+                                ${isActive ? 'Active' : 'Expired'}
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-outline" onclick="viewQRCode('${qr.qrCodeId}')">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline" onclick="copyQRCode('${qr.qrCodeId}')">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            tbody.innerHTML = rows;
+        }
+
+        function viewQRCode(qrCodeId) {
+            alert(`Viewing QR code: ${qrCodeId}\n\nThis would show attendance details in a real implementation.`);
+        }
+
+        function copyQRCode(qrCodeId) {
+            navigator.clipboard.writeText(qrCodeId);
+            showAlert('QR Code ID copied to clipboard', 'success');
+        }
+
+        function showAlert(message, type = 'info') {
+            // Create alert
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 9999;
+                padding: 1rem 1.25rem;
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                max-width: 400px;
+                animation: slideIn 0.3s ease-out;
+            `;
+            
+            // Add animation
+            if (!document.querySelector('#alertStyle')) {
+                const style = document.createElement('style');
+                style.id = 'alertStyle';
+                style.textContent = `
+                    @keyframes slideIn {
+                        from { transform: translateX(100%); opacity: 0; }
+                        to { transform: translateX(0); opacity: 1; }
+                    }
+                    @keyframes slideOut {
+                        from { transform: translateX(0); opacity: 1; }
+                        to { transform: translateX(100%); opacity: 0; }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+            
+            // Set colors based on type
+            let bgColor, textColor, borderColor;
+            switch(type) {
+                case 'success':
+                    bgColor = '#dcfce7';
+                    textColor = '#166534';
+                    borderColor = '#bbf7d0';
+                    break;
+                case 'error':
+                    bgColor = '#fee2e2';
+                    textColor = '#991b1b';
+                    borderColor = '#fecaca';
+                    break;
+                case 'warning':
+                    bgColor = '#fef3c7';
+                    textColor = '#92400e';
+                    borderColor = '#fde68a';
+                    break;
+                default:
+                    bgColor = '#dbeafe';
+                    textColor = '#1e40af';
+                    borderColor = '#bfdbfe';
+            }
+            
+            alert.style.backgroundColor = bgColor;
+            alert.style.color = textColor;
+            alert.style.border = `1px solid ${borderColor}`;
+            alert.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+            
+            // Set icon
+            let icon = 'info-circle';
+            if (type === 'success') icon = 'check-circle';
+            if (type === 'error') icon = 'exclamation-circle';
+            if (type === 'warning') icon = 'exclamation-triangle';
+            
+            alert.innerHTML = `
+                <i class="fas fa-${icon}"></i>
+                <span>${message}</span>
+                <button onclick="this.parentElement.remove()" style="
+                    background: none;
+                    border: none;
+                    color: inherit;
+                    margin-left: 15px;
+                    cursor: pointer;
+                ">×</button>
+            `;
+            
+            document.body.appendChild(alert);
+            
+            // Auto remove
+            setTimeout(() => {
+                if (alert.parentNode) {
+                    alert.style.animation = 'slideOut 0.3s ease-out';
+                    setTimeout(() => alert.remove(), 300);
+                }
+            }, 5000);
+        }
+
+        // Global functions
+        window.viewMyQRCodes = function() {
+            loadRecentQRCodes();
+            showAlert('Showing your QR codes', 'info');
+        };
+
+        window.viewAttendanceReports = function() {
+            showAlert('Attendance reports feature coming soon', 'info');
+        };
+
+        window.viewMyClasses = function() {
+            showAlert('My classes feature coming soon', 'info');
+        };
+
+        window.changePassword = function() {
+            showAlert('Change password feature coming soon', 'info');
+        };
+
+        window.logout = function() {
+            if (confirm('Are you sure you want to logout?')) {
+                localStorage.removeItem('attendance_session');
+                window.location.href = 'login.html';
+            }
+        };
+    </script>
+</body>
+</html>
