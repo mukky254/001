@@ -3,18 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IN - Real Attendance System</title>
+    <title>IN - Smart Attendance Management System</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Poppins', sans-serif;
         }
 
         :root {
@@ -27,468 +23,351 @@
             --dark: #1e293b;
             --light: #f8fafc;
             --gray: #94a3b8;
-            --sidebar-width: 250px;
-            --header-height: 70px;
         }
 
         body {
-            background: #f1f5f9;
+            font-family: 'Poppins', sans-serif;
+            line-height: 1.6;
             color: var(--dark);
             overflow-x: hidden;
         }
 
-        .container {
-            display: flex;
-            min-height: 100vh;
-        }
-
-        .auth-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background: linear-gradient(135deg, #4361ee 0%, #3f37c9 100%);
-            padding: 20px;
-        }
-
-        .auth-box {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            width: 100%;
-            max-width: 400px;
-            overflow: hidden;
-        }
-
-        .auth-header {
-            background: var(--primary);
-            color: white;
-            padding: 30px;
-            text-align: center;
-        }
-
-        .auth-header h1 {
-            font-size: 28px;
-            margin-bottom: 10px;
-        }
-
-        .auth-tabs {
-            display: flex;
-            background: #f8fafc;
-        }
-
-        .auth-tab {
-            flex: 1;
-            padding: 15px;
-            text-align: center;
-            cursor: pointer;
-            font-weight: 500;
-            transition: all 0.3s;
-            border-bottom: 3px solid transparent;
-        }
-
-        .auth-tab.active {
-            background: white;
-            border-bottom: 3px solid var(--primary);
-            color: var(--primary);
-        }
-
-        .auth-form {
-            padding: 30px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 500;
-            color: var(--dark);
-        }
-
-        .form-control {
-            width: 100%;
-            padding: 12px 15px;
-            border: 2px solid #e2e8f0;
-            border-radius: 10px;
-            font-size: 16px;
-            transition: border 0.3s;
-        }
-
-        .form-control:focus {
-            outline: none;
-            border-color: var(--primary);
-        }
-
-        .auth-btn {
-            width: 100%;
-            padding: 15px;
-            background: var(--primary);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-
-        .auth-btn:hover {
-            background: var(--secondary);
-        }
-
-        .auth-btn:disabled {
-            background: var(--gray);
-            cursor: not-allowed;
-        }
-
-        .sidebar {
-            width: var(--sidebar-width);
-            background: white;
-            box-shadow: 5px 0 15px rgba(0, 0, 0, 0.1);
+        /* Navigation */
+        .navbar {
             position: fixed;
-            height: 100vh;
+            top: 0;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
             z-index: 1000;
-            transition: transform 0.3s;
+            padding: 1rem 5%;
         }
 
-        .sidebar-header {
-            padding: 25px;
-            background: var(--primary);
-            color: white;
-            text-align: center;
-        }
-
-        .sidebar-header h2 {
-            font-size: 24px;
-            font-weight: 700;
-        }
-
-        .nav-links {
-            padding: 20px 0;
-        }
-
-        .nav-item {
-            padding: 15px 25px;
-            display: flex;
-            align-items: center;
-            color: var(--dark);
-            text-decoration: none;
-            transition: all 0.3s;
-            border-left: 4px solid transparent;
-            cursor: pointer;
-        }
-
-        .nav-item:hover, .nav-item.active {
-            background: #f1f5f9;
-            border-left-color: var(--primary);
-            color: var(--primary);
-        }
-
-        .nav-item i {
-            margin-right: 12px;
-            font-size: 18px;
-        }
-
-        .main-content {
-            flex: 1;
-            margin-left: var(--sidebar-width);
-            transition: margin-left 0.3s;
-        }
-
-        .header {
-            height: var(--header-height);
-            background: white;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        .nav-container {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0 30px;
-            position: sticky;
-            top: 0;
-            z-index: 100;
+            max-width: 1200px;
+            margin: 0 auto;
         }
 
-        .header-left {
+        .logo {
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 10px;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-decoration: none;
         }
 
-        .header-left h3 {
-            font-size: 20px;
-            font-weight: 600;
+        .logo i {
+            font-size: 2rem;
         }
 
-        .menu-toggle {
-            display: none;
-            font-size: 24px;
-            cursor: pointer;
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .nav-links a {
+            text-decoration: none;
             color: var(--dark);
+            font-weight: 500;
+            transition: color 0.3s;
         }
 
-        .user-menu {
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+
+        .nav-buttons {
             display: flex;
-            align-items: center;
-            gap: 15px;
+            gap: 1rem;
         }
 
-        .user-info {
-            text-align: right;
+        .btn {
+            padding: 0.8rem 1.5rem;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+            text-decoration: none;
+            display: inline-block;
         }
 
-        .user-info small {
-            color: var(--gray);
-        }
-
-        .avatar {
-            width: 45px;
-            height: 45px;
-            border-radius: 50%;
+        .btn-primary {
             background: var(--primary);
             color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
-            font-size: 18px;
         }
 
-        .dashboard {
-            padding: 30px;
+        .btn-primary:hover {
+            background: var(--secondary);
+            transform: translateY(-2px);
         }
 
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 25px;
-            margin-bottom: 40px;
+        .btn-outline {
+            background: transparent;
+            color: var(--primary);
+            border: 2px solid var(--primary);
         }
 
-        .stat-card {
-            background: white;
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            transition: transform 0.3s;
-        }
-
-        .stat-card:hover {
-            transform: translateY(-5px);
-        }
-
-        .stat-icon {
-            width: 60px;
-            height: 60px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
+        .btn-outline:hover {
+            background: var(--primary);
             color: white;
         }
 
-        .stat-icon.primary { background: var(--primary); }
-        .stat-icon.success { background: var(--success); }
-        .stat-icon.warning { background: var(--warning); }
-        .stat-icon.danger { background: var(--danger); }
-
-        .stat-info h3 {
-            font-size: 32px;
-            font-weight: 700;
-            margin-bottom: 5px;
+        /* Hero Section */
+        .hero {
+            padding: 150px 5% 100px;
+            background: linear-gradient(135deg, #4361ee 0%, #3f37c9 100%);
+            color: white;
+            position: relative;
+            overflow: hidden;
         }
 
-        .stat-info p {
-            color: var(--gray);
+        .hero-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+        }
+
+        .hero-text h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1.5rem;
+            line-height: 1.2;
+        }
+
+        .hero-text p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+
+        .hero-image {
+            position: relative;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .hero-image img {
+            width: 100%;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        /* Features */
+        .features {
+            padding: 100px 5%;
+            background: var(--light);
         }
 
         .section-title {
-            font-size: 22px;
-            font-weight: 600;
-            margin-bottom: 20px;
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 3rem;
             color: var(--dark);
         }
 
-        .card {
-            background: white;
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-            margin-bottom: 30px;
-        }
-
-        .table-responsive {
-            overflow-x: auto;
-        }
-
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .data-table th {
-            background: #f8fafc;
-            padding: 15px;
-            text-align: left;
-            font-weight: 600;
-            color: var(--dark);
-            border-bottom: 2px solid #e2e8f0;
-        }
-
-        .data-table td {
-            padding: 15px;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .data-table tr:hover {
-            background: #f8fafc;
-        }
-
-        .status {
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 14px;
-            font-weight: 500;
-        }
-
-        .status.present { background: #dcfce7; color: #166534; }
-        .status.absent { background: #fee2e2; color: #991b1b; }
-        .status.pending { background: #fef3c7; color: #92400e; }
-
-        .scanner-container {
-            max-width: 600px;
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
             margin: 0 auto;
         }
 
-        .scanner-view {
-            width: 100%;
-            height: 400px;
-            background: #000;
+        .feature-card {
+            background: white;
+            padding: 2rem;
             border-radius: 15px;
-            overflow: hidden;
-            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            transition: transform 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+        }
+
+        .feature-icon {
+            width: 80px;
+            height: 80px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            color: white;
+            font-size: 2rem;
+        }
+
+        /* How It Works */
+        .how-it-works {
+            padding: 100px 5%;
+            background: white;
+        }
+
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .step {
+            text-align: center;
+            padding: 2rem;
             position: relative;
         }
 
-        .scanner-frame {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 250px;
-            height: 250px;
-            border: 3px solid var(--primary);
-            border-radius: 15px;
-            box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.5);
-            animation: pulse 2s infinite;
+        .step-number {
+            width: 60px;
+            height: 60px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin: 0 auto 1.5rem;
         }
 
-        #video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
+        /* Testimonials */
+        .testimonials {
+            padding: 100px 5%;
+            background: var(--light);
         }
 
-        #canvas {
-            display: none;
-        }
-
-        @keyframes pulse {
-            0% { border-color: var(--primary); }
-            50% { border-color: var(--accent); }
-            100% { border-color: var(--primary); }
-        }
-
-        .qr-generator {
-            max-width: 600px;
+        .testimonial-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
             margin: 0 auto;
         }
 
-        .qr-display {
-            text-align: center;
-            margin: 30px 0;
-        }
-
-        .qr-code-container {
-            display: inline-block;
-            padding: 20px;
+        .testimonial-card {
             background: white;
+            padding: 2rem;
             border-radius: 15px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
         }
 
-        .profile-container {
-            max-width: 600px;
-            margin: 0 auto;
+        .testimonial-content {
+            font-style: italic;
+            margin-bottom: 1.5rem;
         }
 
-        .profile-header {
-            text-align: center;
-            margin-bottom: 30px;
+        .testimonial-author {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
         }
 
-        .profile-avatar {
-            width: 120px;
-            height: 120px;
+        .author-avatar {
+            width: 50px;
+            height: 50px;
             border-radius: 50%;
             background: var(--primary);
             color: white;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 48px;
             font-weight: 600;
-            margin: 0 auto 20px;
         }
 
-        @media (max-width: 1024px) {
-            .sidebar {
-                transform: translateX(-100%);
-            }
-            .sidebar.active {
-                transform: translateX(0);
-            }
-            .main-content {
-                margin-left: 0;
-            }
-            .menu-toggle {
-                display: block;
-            }
+        /* CTA Section */
+        .cta {
+            padding: 100px 5%;
+            background: linear-gradient(135deg, #4361ee 0%, #3f37c9 100%);
+            color: white;
+            text-align: center;
         }
 
-        @media (max-width: 768px) {
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
-            .header {
-                padding: 0 15px;
-            }
-            .dashboard {
-                padding: 15px;
-            }
+        .cta h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
         }
 
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid var(--primary);
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 20px auto;
+        .cta p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        /* Footer */
+        .footer {
+            background: var(--dark);
+            color: white;
+            padding: 60px 5% 30px;
         }
 
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 3rem;
+            max-width: 1200px;
+            margin: 0 auto 3rem;
+        }
+
+        .footer-logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .footer-links h3 {
+            margin-bottom: 1.5rem;
+            font-size: 1.2rem;
+        }
+
+        .footer-links ul {
+            list-style: none;
+        }
+
+        .footer-links li {
+            margin-bottom: 0.8rem;
+        }
+
+        .footer-links a {
+            color: var(--gray);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .footer-links a:hover {
+            color: white;
+        }
+
+        .copyright {
+            text-align: center;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--gray);
+        }
+
+        /* Modal */
         .modal {
             display: none;
             position: fixed;
@@ -509,593 +388,633 @@
         .modal-content {
             background: white;
             border-radius: 15px;
-            padding: 30px;
-            max-width: 500px;
+            padding: 2rem;
+            max-width: 400px;
             width: 90%;
-            max-height: 90vh;
-            overflow-y: auto;
         }
 
         .modal-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 1.5rem;
         }
 
         .modal-close {
             background: none;
             border: none;
-            font-size: 24px;
+            font-size: 1.5rem;
             cursor: pointer;
             color: var(--gray);
         }
 
-        .alert {
-            padding: 15px 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+        .form-group {
+            margin-bottom: 1.5rem;
         }
 
-        .alert-success {
-            background: #dcfce7;
-            color: #166534;
-            border: 1px solid #bbf7d0;
-        }
-
-        .alert-error {
-            background: #fee2e2;
-            color: #991b1b;
-            border: 1px solid #fecaca;
-        }
-
-        .alert-info {
-            background: #dbeafe;
-            color: #1e40af;
-            border: 1px solid #bfdbfe;
-        }
-
-        .btn {
-            padding: 10px 20px;
-            border-radius: 8px;
-            border: none;
-            cursor: pointer;
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
             font-weight: 500;
-            transition: all 0.3s;
         }
 
-        .btn-primary {
-            background: var(--primary);
-            color: white;
+        .form-control {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border 0.3s;
         }
 
-        .btn-success {
-            background: var(--success);
-            color: white;
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
         }
 
-        .btn-warning {
-            background: var(--warning);
-            color: white;
+        /* Responsive */
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+            
+            .hero-content {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+            
+            .hero-text h1 {
+                font-size: 2.5rem;
+            }
+            
+            .mobile-menu-btn {
+                display: block;
+            }
         }
 
-        .btn-danger {
-            background: var(--danger);
-            color: white;
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--dark);
         }
 
-        .loading {
-            opacity: 0.7;
-            pointer-events: none;
+        /* Mobile Menu */
+        .mobile-menu {
+            position: fixed;
+            top: 0;
+            right: -100%;
+            width: 300px;
+            height: 100%;
+            background: white;
+            box-shadow: -5px 0 20px rgba(0, 0, 0, 0.1);
+            z-index: 1001;
+            transition: right 0.3s;
+            padding: 2rem;
         }
 
-        .empty-state {
-            text-align: center;
-            padding: 40px;
-            color: var(--gray);
+        .mobile-menu.active {
+            right: 0;
         }
 
-        .empty-state i {
-            font-size: 48px;
-            margin-bottom: 15px;
-            color: var(--gray);
+        .mobile-menu-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .mobile-menu-links {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .mobile-menu-links a {
+            text-decoration: none;
+            color: var(--dark);
+            font-size: 1.1rem;
+            padding: 0.8rem 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .mobile-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+
+        .mobile-overlay.active {
+            display: block;
         }
     </style>
 </head>
 <body>
-    <!-- Authentication Page -->
-    <div id="authPage" class="auth-container">
-        <div class="auth-box">
-            <div class="auth-header">
-                <h1><i class="fas fa-graduation-cap"></i> IN System</h1>
-                <p>Real Attendance Management</p>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="#" class="logo">
+                <i class="fas fa-graduation-cap"></i>
+                <span>IN System</span>
+            </a>
+            
+            <div class="nav-links">
+                <a href="#features">Features</a>
+                <a href="#how-it-works">How It Works</a>
+                <a href="#testimonials">Testimonials</a>
+                <a href="#about">About</a>
             </div>
-            <div class="auth-tabs">
-                <div class="auth-tab active" data-tab="login">Login</div>
-                <div class="auth-tab" data-tab="register">Register</div>
+            
+            <div class="nav-buttons">
+                <button class="btn btn-outline" onclick="openLoginModal()">Login</button>
+                <button class="btn btn-primary" onclick="openRegisterModal()">Get Started</button>
             </div>
-            <div class="auth-form">
-                <form id="loginForm">
-                    <div class="form-group">
-                        <label for="loginId">Admission Number / Staff ID</label>
-                        <input type="text" id="loginId" class="form-control" placeholder="Enter your ID" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="loginPassword">Password</label>
-                        <input type="password" id="loginPassword" class="form-control" placeholder="Enter your password" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="loginRole">Login as</label>
-                        <select id="loginRole" class="form-control" required>
-                            <option value="">Select Role</option>
-                            <option value="student">Student</option>
-                            <option value="lecturer">Lecturer</option>
-                            <option value="admin">Admin</option>
-                        </select>
-                    </div>
-                    <button type="submit" class="auth-btn" id="loginBtn">
-                        <span id="loginBtnText">Login</span>
-                    </button>
-                    <div style="text-align: center; margin-top: 15px;">
-                        <button type="button" onclick="initSampleData()" class="btn btn-warning" style="width: 100%;">
-                            <i class="fas fa-database"></i> Initialize Sample Data
-                        </button>
-                        <small style="color: var(--gray); display: block; margin-top: 5px;">
-                            Use this to populate database with test users
-                        </small>
-                    </div>
-                </form>
+            
+            <button class="mobile-menu-btn" onclick="openMobileMenu()">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </nav>
 
-                <form id="registerForm" style="display: none;">
-                    <div class="form-group">
-                        <label for="regRole">Register as</label>
-                        <select id="regRole" class="form-control" required>
-                            <option value="">Select Role</option>
-                            <option value="student">Student</option>
-                            <option value="lecturer">Lecturer</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="regName">Full Name</label>
-                        <input type="text" id="regName" class="form-control" placeholder="Enter full name" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="regId">Admission/Staff Number</label>
-                        <input type="text" id="regId" class="form-control" placeholder="Enter ID" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="regEmail">Email Address</label>
-                        <input type="email" id="regEmail" class="form-control" placeholder="Enter email" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="regPhone">Phone Number</label>
-                        <input type="tel" id="regPhone" class="form-control" placeholder="Enter phone number" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="regPassword">Password</label>
-                        <input type="password" id="regPassword" class="form-control" placeholder="Create password" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="regConfirmPassword">Confirm Password</label>
-                        <input type="password" id="regConfirmPassword" class="form-control" placeholder="Confirm password" required>
-                    </div>
-                    <button type="submit" class="auth-btn" id="registerBtn">
-                        <span id="registerBtnText">Create Account</span>
-                    </button>
-                </form>
+    <!-- Mobile Menu -->
+    <div class="mobile-overlay" onclick="closeMobileMenu()"></div>
+    <div class="mobile-menu" id="mobileMenu">
+        <div class="mobile-menu-header">
+            <div class="logo">
+                <i class="fas fa-graduation-cap"></i>
+                <span>IN System</span>
             </div>
+            <button class="modal-close" onclick="closeMobileMenu()">&times;</button>
+        </div>
+        <div class="mobile-menu-links">
+            <a href="#features" onclick="closeMobileMenu()">Features</a>
+            <a href="#how-it-works" onclick="closeMobileMenu()">How It Works</a>
+            <a href="#testimonials" onclick="closeMobileMenu()">Testimonials</a>
+            <a href="#about" onclick="closeMobileMenu()">About</a>
+            <a href="#" onclick="openLoginModal(); closeMobileMenu()">Login</a>
+            <a href="#" onclick="openRegisterModal(); closeMobileMenu()">Register</a>
         </div>
     </div>
 
-    <!-- Main Application -->
-    <div id="app" class="container" style="display: none;">
-        <!-- Sidebar -->
-        <div class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <h2><i class="fas fa-graduation-cap"></i> IN System</h2>
-            </div>
-            <div class="nav-links" id="navLinks">
-                <!-- Dynamic navigation based on role -->
-            </div>
-        </div>
-
-        <!-- Main Content -->
-        <div class="main-content">
-            <!-- Header -->
-            <div class="header">
-                <div class="header-left">
-                    <div class="menu-toggle" id="menuToggle">
-                        <i class="fas fa-bars"></i>
-                    </div>
-                    <h3 id="pageTitle">Dashboard</h3>
-                </div>
-                <div class="user-menu">
-                    <div class="user-info">
-                        <h4 id="userName">Loading...</h4>
-                        <small id="userRole">...</small>
-                    </div>
-                    <div class="avatar" id="userAvatar">?</div>
-                    <button onclick="logout()" style="background: none; border: none; color: var(--danger); cursor: pointer; font-size: 18px;">
-                        <i class="fas fa-sign-out-alt"></i>
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-text">
+                <h1>Smart Attendance Management Made Simple</h1>
+                <p>Revolutionize classroom attendance with QR code technology. Real-time tracking, automated reports, and seamless integration for schools and universities.</p>
+                <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                    <button class="btn btn-primary" onclick="openRegisterModal()">
+                        <i class="fas fa-rocket"></i> Start Free Trial
+                    </button>
+                    <button class="btn btn-outline" style="background: rgba(255,255,255,0.1); color: white; border-color: white;" onclick="scrollToFeatures()">
+                        <i class="fas fa-play-circle"></i> Watch Demo
                     </button>
                 </div>
+                <div style="margin-top: 2rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center;">
+                        <i class="fas fa-check-circle" style="color: var(--success); margin-right: 0.5rem;"></i>
+                        <span>No Credit Card Required</span>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <i class="fas fa-check-circle" style="color: var(--success); margin-right: 0.5rem;"></i>
+                        <span>Free 30-Day Trial</span>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <i class="fas fa-check-circle" style="color: var(--success); margin-right: 0.5rem;"></i>
+                        <span>24/7 Support</span>
+                    </div>
+                </div>
             </div>
-
-            <!-- Content Area -->
-            <div class="dashboard" id="contentArea">
-                <!-- Dynamic content will be loaded here -->
+            <div class="hero-image">
+                <img src="https://images.unsplash.com/photo-1580582932707-520aed937b7b?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" alt="Attendance System Dashboard">
             </div>
         </div>
-    </div>
+    </section>
 
-    <!-- Modal for QR Scanner -->
-    <div class="modal" id="scannerModal">
+    <!-- Features Section -->
+    <section class="features" id="features">
+        <h2 class="section-title">Powerful Features</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-qrcode"></i>
+                </div>
+                <h3>QR Code Scanning</h3>
+                <p>Students scan unique QR codes generated by lecturers for quick and accurate attendance marking.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <h3>Real-Time Analytics</h3>
+                <p>Get instant insights into attendance patterns, class participation, and student performance.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-bell"></i>
+                </div>
+                <h3>Automated Alerts</h3>
+                <p>Receive notifications for low attendance, absent students, and important updates.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-mobile-alt"></i>
+                </div>
+                <h3>Mobile Responsive</h3>
+                <p>Access the system from any device - smartphones, tablets, or desktop computers.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <h3>Secure & Private</h3>
+                <p>Enterprise-grade security with encrypted data and role-based access control.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-file-export"></i>
+                </div>
+                <h3>Export Reports</h3>
+                <p>Generate and export attendance reports in PDF, Excel, or CSV formats.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section class="how-it-works" id="how-it-works">
+        <h2 class="section-title">How It Works</h2>
+        <div class="steps">
+            <div class="step">
+                <div class="step-number">1</div>
+                <h3>Lecturer Generates QR</h3>
+                <p>Lecturer creates a unique QR code for each class session with configurable duration.</p>
+            </div>
+            <div class="step">
+                <div class="step-number">2</div>
+                <h3>Students Scan</h3>
+                <p>Students use their mobile devices to scan the QR code displayed in class.</p>
+            </div>
+            <div class="step">
+                <div class="step-number">3</div>
+                <h3>Attendance Recorded</h3>
+                <p>System automatically records attendance with timestamp and location data.</p>
+            </div>
+            <div class="step">
+                <div class="step-number">4</div>
+                <h3>View Reports</h3>
+                <p>Access detailed attendance reports and analytics in real-time.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials -->
+    <section class="testimonials" id="testimonials">
+        <h2 class="section-title">What Our Users Say</h2>
+        <div class="testimonial-grid">
+            <div class="testimonial-card">
+                <div class="testimonial-content">
+                    "This system has reduced our administrative workload by 70%. Attendance tracking that used to take hours now takes minutes."
+                </div>
+                <div class="testimonial-author">
+                    <div class="author-avatar">JS</div>
+                    <div>
+                        <h4>Dr. Jane Smith</h4>
+                        <p>Professor, Computer Science</p>
+                    </div>
+                </div>
+            </div>
+            <div class="testimonial-card">
+                <div class="testimonial-content">
+                    "The QR code system is brilliant! Students love the simplicity, and I love the accuracy. No more manual roll calls."
+                </div>
+                <div class="testimonial-author">
+                    <div class="author-avatar">RW</div>
+                    <div>
+                        <h4>Robert Williams</h4>
+                        <p>Lecturer, Engineering</p>
+                    </div>
+                </div>
+            </div>
+            <div class="testimonial-card">
+                <div class="testimonial-content">
+                    "As a student, I appreciate how easy it is to mark attendance. The mobile interface is intuitive and works perfectly."
+                </div>
+                <div class="testimonial-author">
+                    <div class="author-avatar">SD</div>
+                    <div>
+                        <h4>Sarah Davis</h4>
+                        <p>Student, Year 3</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta" id="cta">
+        <h2>Ready to Transform Your Attendance Management?</h2>
+        <p>Join hundreds of educational institutions already using IN System to streamline their attendance tracking process.</p>
+        <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+            <button class="btn btn-primary" style="background: white; color: var(--primary);" onclick="openRegisterModal()">
+                <i class="fas fa-user-plus"></i> Sign Up Free
+            </button>
+            <button class="btn btn-outline" style="border-color: white; color: white;" onclick="openLoginModal()">
+                <i class="fas fa-sign-in-alt"></i> Sign In
+            </button>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div>
+                <div class="footer-logo">
+                    <i class="fas fa-graduation-cap"></i>
+                    <span>IN System</span>
+                </div>
+                <p>Smart attendance management for modern educational institutions.</p>
+                <div style="margin-top: 1.5rem; display: flex; gap: 1rem;">
+                    <a href="#" style="color: white; font-size: 1.2rem;"><i class="fab fa-twitter"></i></a>
+                    <a href="#" style="color: white; font-size: 1.2rem;"><i class="fab fa-facebook"></i></a>
+                    <a href="#" style="color: white; font-size: 1.2rem;"><i class="fab fa-linkedin"></i></a>
+                    <a href="#" style="color: white; font-size: 1.2rem;"><i class="fab fa-github"></i></a>
+                </div>
+            </div>
+            <div class="footer-links">
+                <h3>Product</h3>
+                <ul>
+                    <li><a href="#features">Features</a></li>
+                    <li><a href="#how-it-works">How It Works</a></li>
+                    <li><a href="#testimonials">Testimonials</a></li>
+                    <li><a href="#">Pricing</a></li>
+                </ul>
+            </div>
+            <div class="footer-links">
+                <h3>Company</h3>
+                <ul>
+                    <li><a href="#">About Us</a></li>
+                    <li><a href="#">Careers</a></li>
+                    <li><a href="#">Blog</a></li>
+                    <li><a href="#">Contact</a></li>
+                </ul>
+            </div>
+            <div class="footer-links">
+                <h3>Legal</h3>
+                <ul>
+                    <li><a href="#">Privacy Policy</a></li>
+                    <li><a href="#">Terms of Service</a></li>
+                    <li><a href="#">Cookie Policy</a></li>
+                    <li><a href="#">GDPR</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="copyright">
+            <p>&copy; 2024 IN Attendance System. All rights reserved.</p>
+            <p style="margin-top: 0.5rem; font-size: 0.9rem;">Backend API: https://zero0-1-r0xs.onrender.com</p>
+        </div>
+    </footer>
+
+    <!-- Login Modal -->
+    <div class="modal" id="loginModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Scan QR Code</h3>
-                <button class="modal-close" onclick="closeScanner()">&times;</button>
+                <h2>Sign In to IN System</h2>
+                <button class="modal-close" onclick="closeLoginModal()">&times;</button>
             </div>
-            <div class="scanner-container">
-                <div class="scanner-view">
-                    <video id="video" playsinline></video>
-                    <canvas id="canvas"></canvas>
-                    <div class="scanner-frame"></div>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="loginId">User ID</label>
+                    <input type="text" id="loginId" class="form-control" placeholder="Enter your ID" required>
                 </div>
-                <div id="scanResult" style="text-align: center; margin: 15px 0;"></div>
-                <div style="display: flex; gap: 10px; justify-content: center;">
-                    <button onclick="startScanner()" class="btn btn-primary" id="startScannerBtn">
-                        <i class="fas fa-camera"></i> Start Camera
-                    </button>
-                    <button onclick="stopScanner()" class="btn btn-danger" id="stopScannerBtn" style="display: none;">
-                        <i class="fas fa-stop"></i> Stop Camera
-                    </button>
+                <div class="form-group">
+                    <label for="loginPassword">Password</label>
+                    <input type="password" id="loginPassword" class="form-control" placeholder="Enter your password" required>
                 </div>
+                <div class="form-group">
+                    <label for="loginRole">I am a</label>
+                    <select id="loginRole" class="form-control" required>
+                        <option value="">Select Role</option>
+                        <option value="student">Student</option>
+                        <option value="lecturer">Lecturer</option>
+                        <option value="admin">Administrator</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">
+                    <i class="fas fa-sign-in-alt"></i> Sign In
+                </button>
+            </form>
+            <div style="text-align: center; margin-top: 1rem;">
+                <button class="btn btn-outline" onclick="openRegisterModal(); closeLoginModal()" style="width: 100%;">
+                    <i class="fas fa-user-plus"></i> Create New Account
+                </button>
+            </div>
+            <div style="text-align: center; margin-top: 1rem;">
+                <button class="btn" onclick="initSampleData()" style="background: var(--warning); color: white; width: 100%;">
+                    <i class="fas fa-database"></i> Initialize Sample Data
+                </button>
+                <small style="color: var(--gray); display: block; margin-top: 0.5rem;">
+                    Use this to populate database with test users
+                </small>
             </div>
         </div>
     </div>
 
-    <!-- Modal for QR Generation -->
-    <div class="modal" id="qrModal">
+    <!-- Register Modal -->
+    <div class="modal" id="registerModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Generate QR Code</h3>
-                <button class="modal-close" onclick="closeQRModal()">&times;</button>
+                <h2>Create Account</h2>
+                <button class="modal-close" onclick="closeRegisterModal()">&times;</button>
             </div>
-            <div class="qr-generator">
-                <form id="qrForm">
+            <form id="registerForm">
+                <div class="form-group">
+                    <label for="regRole">I want to register as</label>
+                    <select id="regRole" class="form-control" required onchange="toggleRegistrationFields()">
+                        <option value="">Select Role</option>
+                        <option value="student">Student</option>
+                        <option value="lecturer">Lecturer</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="regName">Full Name</label>
+                    <input type="text" id="regName" class="form-control" placeholder="Enter your full name" required>
+                </div>
+                <div class="form-group">
+                    <label for="regId">User ID</label>
+                    <input type="text" id="regId" class="form-control" placeholder="Enter unique ID" required>
+                    <small style="color: var(--gray);">Students: Admission Number, Lecturers: Staff ID</small>
+                </div>
+                <div class="form-group">
+                    <label for="regEmail">Email Address</label>
+                    <input type="email" id="regEmail" class="form-control" placeholder="Enter your email" required>
+                </div>
+                <div class="form-group">
+                    <label for="regPhone">Phone Number</label>
+                    <input type="tel" id="regPhone" class="form-control" placeholder="Enter phone number" required>
+                </div>
+                <div id="studentFields" style="display: none;">
                     <div class="form-group">
-                        <label for="unitName">Unit Name *</label>
-                        <input type="text" id="unitName" class="form-control" placeholder="e.g., Database Systems" required>
+                        <label for="regCourse">Course/Program</label>
+                        <input type="text" id="regCourse" class="form-control" placeholder="e.g., Computer Science">
                     </div>
                     <div class="form-group">
-                        <label for="unitCode">Unit Code *</label>
-                        <input type="text" id="unitCode" class="form-control" placeholder="e.g., CS301" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="duration">Duration (minutes) *</label>
-                        <input type="number" id="duration" class="form-control" value="15" min="1" max="120" required>
-                        <small style="color: var(--gray);">QR code will expire after this time</small>
-                    </div>
-                    <div class="form-group">
-                        <label for="classType">Class Type</label>
-                        <select id="classType" class="form-control">
-                            <option value="lecture">Lecture</option>
-                            <option value="tutorial">Tutorial</option>
-                            <option value="lab">Lab Session</option>
-                            <option value="seminar">Seminar</option>
+                        <label for="regYear">Year of Study</label>
+                        <select id="regYear" class="form-control">
+                            <option value="1">Year 1</option>
+                            <option value="2">Year 2</option>
+                            <option value="3">Year 3</option>
+                            <option value="4">Year 4</option>
                         </select>
                     </div>
-                    <button type="submit" class="auth-btn" id="generateQRBtn">
-                        <span id="generateQRBtnText">Generate QR Code</span>
-                    </button>
-                </form>
-                <div class="qr-display" id="qrDisplay" style="display: none;">
-                    <h4>Generated QR Code</h4>
-                    <div class="qr-code-container">
-                        <div id="qrcode"></div>
-                    </div>
-                    <div style="margin-top: 20px; text-align: left; background: #f8fafc; padding: 15px; border-radius: 10px;">
-                        <p><strong>Unit:</strong> <span id="qrUnitName"></span></p>
-                        <p><strong>Code:</strong> <span id="qrUnitCode"></span></p>
-                        <p><strong>Class Type:</strong> <span id="qrClassType"></span></p>
-                        <p><strong>Generated by:</strong> <span id="qrLecturerName"></span></p>
-                        <p><strong>Expires in:</strong> <span id="qrExpiry"></span> minutes</p>
-                        <p><strong>QR Code ID:</strong> <span id="qrCodeId" style="font-family: monospace;"></span></p>
-                    </div>
-                    <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: center;">
-                        <button onclick="printQRCode()" class="btn btn-warning">
-                            <i class="fas fa-print"></i> Print
-                        </button>
-                        <button onclick="downloadQRCode()" class="btn btn-primary">
-                            <i class="fas fa-download"></i> Download
-                        </button>
+                </div>
+                <div id="lecturerFields" style="display: none;">
+                    <div class="form-group">
+                        <label for="regDepartment">Department</label>
+                        <input type="text" id="regDepartment" class="form-control" placeholder="e.g., Computer Science Department">
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal for Attendance Details -->
-    <div class="modal" id="attendanceModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Attendance Details</h3>
-                <button class="modal-close" onclick="closeAttendanceModal()">&times;</button>
-            </div>
-            <div id="attendanceDetails">
-                <!-- Attendance details will be loaded here -->
+                <div class="form-group">
+                    <label for="regPassword">Password</label>
+                    <input type="password" id="regPassword" class="form-control" placeholder="Create password" required>
+                </div>
+                <div class="form-group">
+                    <label for="regConfirmPassword">Confirm Password</label>
+                    <input type="password" id="regConfirmPassword" class="form-control" placeholder="Confirm password" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">
+                    <i class="fas fa-user-plus"></i> Create Account
+                </button>
+            </form>
+            <div style="text-align: center; margin-top: 1rem;">
+                <button class="btn btn-outline" onclick="openLoginModal(); closeRegisterModal()" style="width: 100%;">
+                    <i class="fas fa-sign-in-alt"></i> Already have an account? Sign In
+                </button>
             </div>
         </div>
     </div>
 
     <script>
-        // ============================
-        // Configuration
-        // ============================
+        // API Configuration
         const API_BASE_URL = 'https://zero0-1-r0xs.onrender.com';
-        const SESSION_DURATION = 24 * 60 * 60 * 1000; // 24 hours
+        
+        // DOM Elements
+        const loginModal = document.getElementById('loginModal');
+        const registerModal = document.getElementById('registerModal');
+        const mobileMenu = document.getElementById('mobileMenu');
+        const mobileOverlay = document.querySelector('.mobile-overlay');
 
-        // ============================
-        // Global Variables
-        // ============================
-        let currentUser = null;
-        let currentRole = null;
-        let currentToken = null;
-        let videoStream = null;
-        let scannerActive = false;
-        let currentQRCodeData = null;
-        let scannerInterval = null;
-
-        // ============================
-        // API Service Functions
-        // ============================
-        class APIService {
-            static async request(endpoint, method = 'GET', data = null, requiresAuth = true) {
-                const url = `${API_BASE_URL}${endpoint}`;
-                const headers = {
-                    'Content-Type': 'application/json',
-                };
-
-                if (requiresAuth && currentToken) {
-                    headers['Authorization'] = `Bearer ${currentToken}`;
-                }
-
-                const config = {
-                    method,
-                    headers,
-                };
-
-                if (data && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
-                    config.body = JSON.stringify(data);
-                }
-
-                try {
-                    const response = await fetch(url, config);
-                    const result = await response.json();
-
-                    if (!response.ok) {
-                        throw new Error(result.message || `HTTP ${response.status}: ${response.statusText}`);
-                    }
-
-                    return result;
-                } catch (error) {
-                    console.error('API Error:', error);
-                    throw error;
-                }
-            }
-
-            // Auth endpoints
-            static async register(userData) {
-                return await this.request('/api/auth/register', 'POST', userData, false);
-            }
-
-            static async login(credentials) {
-                return await this.request('/api/auth/login', 'POST', credentials, false);
-            }
-
-            // Student endpoints
-            static async getStudentDashboard() {
-                return await this.request(`/api/students/${currentUser.id}/dashboard`);
-            }
-
-            static async getStudentAttendance() {
-                return await this.request(`/api/students/${currentUser.id}/attendance`);
-            }
-
-            static async scanQRCode(qrData) {
-                return await this.request('/api/attendance/scan', 'POST', {
-                    studentId: currentUser.id,
-                    qrCode: qrData,
-                    scanTime: new Date().toISOString()
-                });
-            }
-
-            static async updateStudentProfile(profileData) {
-                return await this.request(`/api/students/${currentUser.id}`, 'PUT', profileData);
-            }
-
-            // Lecturer endpoints
-            static async getLecturerDashboard() {
-                return await this.request(`/api/lecturers/${currentUser.id}/dashboard`);
-            }
-
-            static async generateQRCode(qrData) {
-                return await this.request('/api/lecturers/generate-qr', 'POST', qrData);
-            }
-
-            static async getLecturerQRCodes() {
-                return await this.request(`/api/lecturers/${currentUser.id}/qr-codes`);
-            }
-
-            static async getAttendanceByQR(qrCodeId) {
-                return await this.request(`/api/lecturers/qr-codes/${qrCodeId}/attendance`);
-            }
-
-            // Admin endpoints
-            static async getAdminDashboard() {
-                return await this.request('/api/admin/dashboard');
-            }
-
-            static async getAllStudents() {
-                return await this.request('/api/admin/students');
-            }
-
-            static async getStudentAnalytics(studentId) {
-                return await this.request(`/api/admin/students/${studentId}/analytics`);
-            }
-
-            static async getAllAttendance() {
-                return await this.request('/api/admin/attendance');
-            }
-
-            static async createUser(userData) {
-                return await this.request('/api/admin/users', 'POST', userData);
-            }
-
-            static async deleteUser(userId) {
-                return await this.request(`/api/admin/users/${userId}`, 'DELETE');
-            }
-
-            // Initialize sample data
-            static async initSampleData() {
-                return await this.request('/api/init-sample-data', 'POST', {}, false);
-            }
-
-            // Health check
-            static async healthCheck() {
-                return await this.request('/api/health', 'GET', null, false);
-            }
+        // Modal Functions
+        function openLoginModal() {
+            closeRegisterModal();
+            loginModal.classList.add('active');
+            document.body.style.overflow = 'hidden';
         }
 
-        // ============================
-        // Utility Functions
-        // ============================
-        function showLoading(button) {
-            if (button) {
-                const text = button.querySelector('span');
-                if (text) {
-                    text.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-                }
-                button.disabled = true;
-                button.classList.add('loading');
-            }
+        function closeLoginModal() {
+            loginModal.classList.remove('active');
+            document.body.style.overflow = 'auto';
         }
 
-        function hideLoading(button, originalText) {
-            if (button) {
-                const text = button.querySelector('span');
-                if (text) {
-                    text.textContent = originalText;
-                }
-                button.disabled = false;
-                button.classList.remove('loading');
-            }
+        function openRegisterModal() {
+            closeLoginModal();
+            registerModal.classList.add('active');
+            document.body.style.overflow = 'hidden';
         }
 
-        function showAlert(message, type = 'info') {
-            // Remove existing alerts
-            const existingAlerts = document.querySelectorAll('.alert');
-            existingAlerts.forEach(alert => alert.remove());
+        function closeRegisterModal() {
+            registerModal.classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
 
-            const alertDiv = document.createElement('div');
-            alertDiv.className = `alert alert-${type}`;
+        function openMobileMenu() {
+            mobileMenu.classList.add('active');
+            mobileOverlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeMobileMenu() {
+            mobileMenu.classList.remove('active');
+            mobileOverlay.classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+
+        function toggleRegistrationFields() {
+            const role = document.getElementById('regRole').value;
+            const studentFields = document.getElementById('studentFields');
+            const lecturerFields = document.getElementById('lecturerFields');
             
-            let icon = 'fas fa-info-circle';
-            if (type === 'success') icon = 'fas fa-check-circle';
-            if (type === 'error') icon = 'fas fa-exclamation-circle';
-
-            alertDiv.innerHTML = `
-                <i class="${icon}"></i>
-                <span>${message}</span>
-            `;
-
-            const contentArea = document.getElementById('contentArea');
-            if (contentArea) {
-                contentArea.insertBefore(alertDiv, contentArea.firstChild);
-                
-                setTimeout(() => {
-                    alertDiv.remove();
-                }, 5000);
-            } else {
-                // If no content area yet (e.g., during login), show at top
-                document.body.insertBefore(alertDiv, document.body.firstChild);
-                setTimeout(() => {
-                    alertDiv.remove();
-                }, 5000);
-            }
+            studentFields.style.display = role === 'student' ? 'block' : 'none';
+            lecturerFields.style.display = role === 'lecturer' ? 'block' : 'none';
         }
 
-        function formatDate(dateString) {
-            const date = new Date(dateString);
-            return date.toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric'
-            });
+        function scrollToFeatures() {
+            document.getElementById('features').scrollIntoView({ behavior: 'smooth' });
         }
 
-        function formatTime(dateString) {
-            const date = new Date(dateString);
-            return date.toLocaleTimeString('en-US', {
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-        }
-
-        function getInitials(name) {
-            return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
-        }
-
-        // ============================
-        // Authentication Functions
-        // ============================
-        async function handleLogin(e) {
+        // Login Form Submission
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
             const id = document.getElementById('loginId').value;
             const password = document.getElementById('loginPassword').value;
             const role = document.getElementById('loginRole').value;
-            const loginBtn = document.getElementById('loginBtn');
-            const originalText = 'Login';
-
-            showLoading(loginBtn);
+            
+            const btn = e.target.querySelector('button');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing In...';
+            btn.disabled = true;
 
             try {
-                const result = await APIService.login({
-                    id,
-                    password,
-                    role
+                const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        id,
+                        password,
+                        role
+                    })
                 });
 
-                if (result.success) {
-                    currentUser = result.user;
-                    currentRole = role;
-                    currentToken = result.token;
+                const data = await response.json();
 
-                    // Save session
+                if (response.ok) {
+                    // Store session data
                     localStorage.setItem('session', JSON.stringify({
-                        user: currentUser,
-                        role: currentRole,
-                        token: currentToken,
-                        expires: Date.now() + SESSION_DURATION
+                        user: data.user,
+                        token: data.token,
+                        role: role,
+                        expires: Date.now() + (24 * 60 * 60 * 1000) // 24 hours
                     }));
-
-                    initializeApp();
-                    showAlert('Login successful!', 'success');
+                    
+                    showAlert('Login successful! Redirecting to dashboard...', 'success');
+                    
+                    // Redirect to app page
+                    setTimeout(() => {
+                        window.location.href = 'app.html';
+                    }, 1500);
+                    
                 } else {
-                    throw new Error(result.message || 'Login failed');
+                    throw new Error(data.message || 'Login failed');
                 }
             } catch (error) {
                 showAlert(error.message || 'Login failed. Please check your credentials.', 'error');
             } finally {
-                hideLoading(loginBtn, originalText);
+                btn.innerHTML = originalText;
+                btn.disabled = false;
             }
-        }
+        });
 
-        async function handleRegister(e) {
+        // Register Form Submission
+        document.getElementById('registerForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
             const role = document.getElementById('regRole').value;
@@ -1105,51 +1024,75 @@
             const phone = document.getElementById('regPhone').value;
             const password = document.getElementById('regPassword').value;
             const confirmPassword = document.getElementById('regConfirmPassword').value;
-
+            
             if (password !== confirmPassword) {
                 showAlert('Passwords do not match!', 'error');
                 return;
             }
-
-            const registerBtn = document.getElementById('registerBtn');
-            const originalText = 'Create Account';
-            showLoading(registerBtn);
+            
+            const userData = {
+                role,
+                name,
+                id,
+                email,
+                phone,
+                password
+            };
+            
+            if (role === 'student') {
+                userData.course = document.getElementById('regCourse').value;
+                userData.year = document.getElementById('regYear').value;
+            } else if (role === 'lecturer') {
+                userData.department = document.getElementById('regDepartment').value;
+            }
+            
+            const btn = e.target.querySelector('button');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating Account...';
+            btn.disabled = true;
 
             try {
-                const result = await APIService.register({
-                    role,
-                    name,
-                    id,
-                    email,
-                    phone,
-                    password
+                const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(userData)
                 });
 
-                if (result.success) {
-                    showAlert('Registration successful! Please login.', 'success');
-                    document.querySelector('.auth-tab[data-tab="login"]').click();
+                const data = await response.json();
+
+                if (response.ok) {
+                    showAlert('Registration successful! Please sign in.', 'success');
+                    closeRegisterModal();
+                    openLoginModal();
                     document.getElementById('registerForm').reset();
                 } else {
-                    throw new Error(result.message || 'Registration failed');
+                    throw new Error(data.message || 'Registration failed');
                 }
             } catch (error) {
                 showAlert(error.message || 'Registration failed. Please try again.', 'error');
             } finally {
-                hideLoading(registerBtn, originalText);
+                btn.innerHTML = originalText;
+                btn.disabled = false;
             }
-        }
+        });
 
+        // Initialize Sample Data
         async function initSampleData() {
-            if (confirm('This will initialize sample data in the database. Continue?')) {
+            if (confirm('This will initialize the database with sample test users. Continue?')) {
                 try {
-                    const result = await APIService.initSampleData();
-                    if (result.success) {
-                        showAlert('Sample data initialized successfully! You can now login with:', 'success');
-                        showAlert('Admin: ID=AD001, Password=admin123', 'info');
-                        showAlert('Lecturer: ID=LT001, Password=lecturer123', 'info');
-                        showAlert('Student: ID=ST001, Password=student123', 'info');
+                    const response = await fetch(`${API_BASE_URL}/api/init-sample-data`, {
+                        method: 'POST'
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        showAlert('Sample data initialized successfully!', 'success');
+                        showAlert('Test Credentials:<br>Admin: ID=AD001, Password=admin123<br>Lecturer: ID=LT001, Password=lecturer123<br>Student: ID=ST001, Password=student123', 'info');
                     } else {
-                        showAlert(result.message || 'Failed to initialize sample data', 'error');
+                        showAlert(data.message || 'Failed to initialize sample data', 'error');
                     }
                 } catch (error) {
                     showAlert('Error initializing sample data: ' + error.message, 'error');
@@ -1157,499 +1100,135 @@
             }
         }
 
+        // Show Alert Message
+        function showAlert(message, type = 'info') {
+            // Remove existing alerts
+            const existingAlerts = document.querySelectorAll('.alert-message');
+            existingAlerts.forEach(alert => alert.remove());
+
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert-message alert-${type}`;
+            alertDiv.style.cssText = `
+                position: fixed;
+                top: 100px;
+                right: 20px;
+                padding: 15px 20px;
+                border-radius: 10px;
+                color: white;
+                z-index: 2001;
+                animation: slideIn 0.3s ease;
+                max-width: 400px;
+                box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            `;
+            
+            if (type === 'success') {
+                alertDiv.style.background = '#10b981';
+                alertDiv.innerHTML = `<i class="fas fa-check-circle"></i> ${message}`;
+            } else if (type === 'error') {
+                alertDiv.style.background = '#ef4444';
+                alertDiv.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${message}`;
+            } else {
+                alertDiv.style.background = '#3b82f6';
+                alertDiv.innerHTML = `<i class="fas fa-info-circle"></i> ${message}`;
+            }
+            
+            document.body.appendChild(alertDiv);
+            
+            setTimeout(() => {
+                alertDiv.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => {
+                    alertDiv.remove();
+                }, 300);
+            }, 5000);
+        }
+
+        // Add CSS for alerts
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+            @keyframes slideOut {
+                from {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+                to {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+            }
+            .alert-message i {
+                margin-right: 10px;
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Check if already logged in
         function checkSession() {
             const sessionData = localStorage.getItem('session');
             
-            if (!sessionData) return false;
-
-            const session = JSON.parse(sessionData);
-            
-            if (Date.now() > session.expires) {
-                localStorage.removeItem('session');
-                return false;
-            }
-
-            currentUser = session.user;
-            currentRole = session.role;
-            currentToken = session.token;
-            return true;
-        }
-
-        function logout() {
-            localStorage.removeItem('session');
-            currentUser = null;
-            currentRole = null;
-            currentToken = null;
-            
-            if (scannerActive) {
-                stopScanner();
-            }
-
-            document.getElementById('app').style.display = 'none';
-            document.getElementById('authPage').style.display = 'flex';
-            document.getElementById('loginForm').reset();
-            
-            showAlert('Logged out successfully!', 'success');
-        }
-
-        // ============================
-        // Application Initialization
-        // ============================
-        function initializeApp() {
-            document.getElementById('authPage').style.display = 'none';
-            document.getElementById('app').style.display = 'flex';
-            
-            updateUserInfo();
-            setupNavigation();
-            loadPage('dashboard');
-            setupMenuToggle();
-        }
-
-        function updateUserInfo() {
-            if (!currentUser) return;
-            
-            document.getElementById('userName').textContent = currentUser.name;
-            document.getElementById('userRole').textContent = currentRole.charAt(0).toUpperCase() + currentRole.slice(1);
-            document.getElementById('userAvatar').textContent = getInitials(currentUser.name);
-        }
-
-        function setupNavigation() {
-            const navLinks = document.getElementById('navLinks');
-            navLinks.innerHTML = '';
-
-            const navItems = {
-                dashboard: { icon: 'fas fa-tachometer-alt', text: 'Dashboard' },
-                profile: { icon: 'fas fa-user', text: 'Profile' }
-            };
-
-            if (currentRole === 'student') {
-                navItems.scanner = { icon: 'fas fa-qrcode', text: 'Scan QR Code' };
-                navItems.attendance = { icon: 'fas fa-history', text: 'My Attendance' };
-            } else if (currentRole === 'lecturer') {
-                navItems.generateQR = { icon: 'fas fa-qr-code', text: 'Generate QR Code' };
-                navItems.myQRCodes = { icon: 'fas fa-list', text: 'My QR Codes' };
-                navItems.attendanceReports = { icon: 'fas fa-chart-bar', text: 'Attendance Reports' };
-            } else if (currentRole === 'admin') {
-                navItems.students = { icon: 'fas fa-users', text: 'Manage Students' };
-                navItems.lecturers = { icon: 'fas fa-chalkboard-teacher', text: 'Manage Lecturers' };
-                navItems.courses = { icon: 'fas fa-book', text: 'Manage Courses' };
-                navItems.analytics = { icon: 'fas fa-chart-pie', text: 'Analytics' };
-                navItems.system = { icon: 'fas fa-cog', text: 'System Settings' };
-            }
-
-            Object.entries(navItems).forEach(([page, item]) => {
-                const navItem = document.createElement('div');
-                navItem.className = 'nav-item';
-                navItem.innerHTML = `<i class="${item.icon}"></i> ${item.text}`;
-                navItem.onclick = () => {
-                    loadPage(page);
-                    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-                    navItem.classList.add('active');
-                    document.getElementById('sidebar').classList.remove('active');
-                };
-                navLinks.appendChild(navItem);
-            });
-
-            if (navLinks.firstChild) {
-                navLinks.firstChild.classList.add('active');
-            }
-        }
-
-        function setupMenuToggle() {
-            document.getElementById('menuToggle').addEventListener('click', function() {
-                document.getElementById('sidebar').classList.toggle('active');
-            });
-        }
-
-        // ============================
-        // Page Loading Functions
-        // ============================
-        async function loadPage(page) {
-            const contentArea = document.getElementById('contentArea');
-            document.getElementById('pageTitle').textContent = page.charAt(0).toUpperCase() + page.slice(1);
-            
-            contentArea.innerHTML = '<div class="spinner"></div>';
-
-            try {
-                let content = '';
-                
-                switch(page) {
-                    case 'dashboard':
-                        content = await loadDashboard();
-                        break;
-                    case 'profile':
-                        content = await loadProfile();
-                        break;
-                    case 'scanner':
-                        content = await loadScannerPage();
-                        break;
-                    case 'attendance':
-                        content = await loadAttendancePage();
-                        break;
-                    case 'generateQR':
-                        content = await loadQRGeneratorPage();
-                        break;
-                    case 'myQRCodes':
-                        content = await loadMyQRCodesPage();
-                        break;
-                    case 'attendanceReports':
-                        content = await loadAttendanceReportsPage();
-                        break;
-                    case 'students':
-                        content = await loadManageStudentsPage();
-                        break;
-                    case 'lecturers':
-                        content = await loadManageLecturersPage();
-                        break;
-                    case 'courses':
-                        content = await loadManageCoursesPage();
-                        break;
-                    case 'analytics':
-                        content = await loadAnalyticsPage();
-                        break;
-                    case 'system':
-                        content = await loadSystemPage();
-                        break;
-                    default:
-                        content = await loadDashboard();
+            if (sessionData) {
+                const session = JSON.parse(sessionData);
+                if (Date.now() < session.expires) {
+                    // Redirect to app if already logged in
+                    window.location.href = 'app.html';
+                } else {
+                    localStorage.removeItem('session');
                 }
+            }
+        }
+
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href');
+                if (targetId === '#') return;
                 
-                contentArea.innerHTML = content;
-                initializePage(page);
-            } catch (error) {
-                contentArea.innerHTML = `
-                    <div class="card">
-                        <div class="empty-state">
-                            <i class="fas fa-exclamation-triangle"></i>
-                            <h3>Error Loading Page</h3>
-                            <p>${error.message}</p>
-                            <button onclick="loadPage('dashboard')" class="btn btn-primary" style="margin-top: 20px;">
-                                <i class="fas fa-home"></i> Return to Dashboard
-                            </button>
-                        </div>
-                    </div>
-                `;
-            }
-        }
-
-        async function loadDashboard() {
-            try {
-                let data;
-                let html = '';
-
-                if (currentRole === 'student') {
-                    data = await APIService.getStudentDashboard();
-                    
-                    html = `
-                        <div class="stats-grid">
-                            <div class="stat-card">
-                                <div class="stat-icon primary">
-                                    <i class="fas fa-book"></i>
-                                </div>
-                                <div class="stat-info">
-                                    <h3>${data.data.totalClasses || 0}</h3>
-                                    <p>Total Classes</p>
-                                </div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-icon success">
-                                    <i class="fas fa-check-circle"></i>
-                                </div>
-                                <div class="stat-info">
-                                    <h3>${data.data.attendedClasses || 0}</h3>
-                                    <p>Classes Attended</p>
-                                </div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-icon warning">
-                                    <i class="fas fa-percentage"></i>
-                                </div>
-                                <div class="stat-info">
-                                    <h3>${data.data.attendancePercentage || 0}%</h3>
-                                    <p>Attendance Rate</p>
-                                </div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-icon danger">
-                                    <i class="fas fa-times-circle"></i>
-                                </div>
-                                <div class="stat-info">
-                                    <h3>${data.data.missedClasses || 0}</h3>
-                                    <p>Classes Missed</p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="card">
-                            <h3 class="section-title">Recent Attendance</h3>
-                            ${data.data.recentAttendance && data.data.recentAttendance.length > 0 ? `
-                                <div class="table-responsive">
-                                    <table class="data-table">
-                                        <thead>
-                                            <tr>
-                                                <th>Date</th>
-                                                <th>Time</th>
-                                                <th>Unit Name</th>
-                                                <th>Unit Code</th>
-                                                <th>Status</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            ${data.data.recentAttendance.map(record => `
-                                                <tr>
-                                                    <td>${record.date}</td>
-                                                    <td>${record.time}</td>
-                                                    <td>${record.unitName}</td>
-                                                    <td>${record.unitCode}</td>
-                                                    <td><span class="status ${record.status}">${record.status}</span></td>
-                                                </tr>
-                                            `).join('')}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            ` : `
-                                <div class="empty-state">
-                                    <i class="fas fa-history"></i>
-                                    <p>No attendance records found</p>
-                                </div>
-                            `}
-                        </div>
-                    `;
-
-                } else if (currentRole === 'lecturer') {
-                    data = await APIService.getLecturerDashboard();
-                    
-                    html = `
-                        <div class="stats-grid">
-                            <div class="stat-card">
-                                <div class="stat-icon primary">
-                                    <i class="fas fa-chalkboard-teacher"></i>
-                                </div>
-                                <div class="stat-info">
-                                    <h3>${data.data.totalClasses || 0}</h3>
-                                    <p>Classes Conducted</p>
-                                </div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-icon success">
-                                    <i class="fas fa-users"></i>
-                                </div>
-                                <div class="stat-info">
-                                    <h3>${data.data.totalStudents || 0}</h3>
-                                    <p>Total Students</p>
-                                </div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-icon warning">
-                                    <i class="fas fa-clock"></i>
-                                </div>
-                                <div class="stat-info">
-                                    <h3>${data.data.avgAttendance || 0}%</h3>
-                                    <p>Avg Attendance</p>
-                                </div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-icon danger">
-                                    <i class="fas fa-exclamation-triangle"></i>
-                                </div>
-                                <div class="stat-info">
-                                    <h3>${data.data.activeQRCodes || 0}</h3>
-                                    <p>Active QR Codes</p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="card">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                                <h3 class="section-title">Recent QR Codes</h3>
-                                <button onclick="openQRModal()" class="btn btn-primary">
-                                    <i class="fas fa-plus"></i> New QR Code
-                                </button>
-                            </div>
-                            ${data.data.recentQRCodes && data.data.recentQRCodes.length > 0 ? `
-                                <div class="table-responsive">
-                                    <table class="data-table">
-                                        <thead>
-                                            <tr>
-                                                <th>Unit Name</th>
-                                                <th>Unit Code</th>
-                                                <th>Generated</th>
-                                                <th>Expires</th>
-                                                <th>Attendance</th>
-                                                <th>Status</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            ${data.data.recentQRCodes.map(qr => `
-                                                <tr onclick="viewQRCodeAttendance('${qr.id}')" style="cursor: pointer;">
-                                                    <td>${qr.unitName}</td>
-                                                    <td>${qr.unitCode}</td>
-                                                    <td>${formatTime(qr.createdAt)}</td>
-                                                    <td>${formatTime(qr.expiresAt)}</td>
-                                                    <td>${qr.attendanceCount || 0} students</td>
-                                                    <td>
-                                                        <span class="status ${new Date(qr.expiresAt) > new Date() ? 'present' : 'absent'}">
-                                                            ${new Date(qr.expiresAt) > new Date() ? 'Active' : 'Expired'}
-                                                        </span>
-                                                    </td>
-                                                </tr>
-                                            `).join('')}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            ` : `
-                                <div class="empty-state">
-                                    <i class="fas fa-qrcode"></i>
-                                    <p>No QR codes generated yet</p>
-                                    <button onclick="openQRModal()" class="btn btn-primary" style="margin-top: 15px;">
-                                        <i class="fas fa-plus"></i> Generate Your First QR Code
-                                    </button>
-                                </div>
-                            `}
-                        </div>
-                    `;
-
-                } else if (currentRole === 'admin') {
-                    data = await APIService.getAdminDashboard();
-                    
-                    html = `
-                        <div class="stats-grid">
-                            <div class="stat-card">
-                                <div class="stat-icon primary">
-                                    <i class="fas fa-users"></i>
-                                </div>
-                                <div class="stat-info">
-                                    <h3>${data.data.totalStudents || 0}</h3>
-                                    <p>Total Students</p>
-                                </div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-icon success">
-                                    <i class="fas fa-chalkboard-teacher"></i>
-                                </div>
-                                <div class="stat-info">
-                                    <h3>${data.data.totalLecturers || 0}</h3>
-                                    <p>Total Lecturers</p>
-                                </div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-icon warning">
-                                    <i class="fas fa-book"></i>
-                                </div>
-                                <div class="stat-info">
-                                    <h3>${data.data.totalCourses || 0}</h3>
-                                    <p>Total Courses</p>
-                                </div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-icon danger">
-                                    <i class="fas fa-chart-line"></i>
-                                </div>
-                                <div class="stat-info">
-                                    <h3>${data.data.overallAttendance || 0}%</h3>
-                                    <p>Overall Attendance</p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="card">
-                            <h3 class="section-title">Recent Activity</h3>
-                            <div class="table-responsive">
-                                <table class="data-table">
-                                    <thead>
-                                        <tr>
-                                            <th>Time</th>
-                                            <th>User</th>
-                                            <th>Action</th>
-                                            <th>Details</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        ${data.data.recentActivity && data.data.recentActivity.map(activity => `
-                                            <tr>
-                                                <td>${activity.timestamp}</td>
-                                                <td>${activity.userName}</td>
-                                                <td>${activity.action}</td>
-                                                <td>${activity.details}</td>
-                                            </tr>
-                                        `).join('') || `
-                                            <tr>
-                                                <td colspan="4" style="text-align: center; color: var(--gray);">
-                                                    No recent activity
-                                                </td>
-                                            </tr>
-                                        `}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    `;
+                const targetElement = document.querySelector(targetId);
+                if (targetElement) {
+                    window.scrollTo({
+                        top: targetElement.offsetTop - 80,
+                        behavior: 'smooth'
+                    });
+                    closeMobileMenu();
                 }
-
-                return html;
-            } catch (error) {
-                return `
-                    <div class="card">
-                        <div class="empty-state">
-                            <i class="fas fa-exclamation-circle"></i>
-                            <h3>Error Loading Dashboard</h3>
-                            <p>${error.message}</p>
-                        </div>
-                    </div>
-                `;
-            }
-        }
-
-        // [Rest of the functions remain the same as in the previous code...]
-        // Due to character limits, I'll include the most critical parts only
-        // The complete code would continue here with all the other functions
-
-        // ============================
-        // Initialize Application
-        // ============================
-        document.addEventListener('DOMContentLoaded', function() {
-            // Setup auth tabs
-            document.querySelectorAll('.auth-tab').forEach(tab => {
-                tab.addEventListener('click', function() {
-                    const tabName = this.dataset.tab;
-                    document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
-                    this.classList.add('active');
-                    
-                    if (tabName === 'login') {
-                        document.getElementById('loginForm').style.display = 'block';
-                        document.getElementById('registerForm').style.display = 'none';
-                    } else {
-                        document.getElementById('loginForm').style.display = 'none';
-                        document.getElementById('registerForm').style.display = 'block';
-                    }
-                });
             });
-
-            // Setup form submissions
-            document.getElementById('loginForm').addEventListener('submit', handleLogin);
-            document.getElementById('registerForm').addEventListener('submit', handleRegister);
-
-            // Check for existing session
-            if (checkSession()) {
-                initializeApp();
-            }
-
-            // Test backend connection
-            testBackendConnection();
         });
 
-        async function testBackendConnection() {
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/health`);
-                if (response.ok) {
-                    console.log('✅ Backend connection successful');
-                } else {
-                    console.warn('⚠️ Backend connection issue');
-                }
-            } catch (error) {
-                console.error('❌ Backend connection failed:', error);
+        // Close modals on ESC key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeLoginModal();
+                closeRegisterModal();
+                closeMobileMenu();
             }
-        }
+        });
+
+        // Initialize on page load
+        window.addEventListener('load', function() {
+            checkSession();
+            
+            // Add scroll effect to navbar
+            window.addEventListener('scroll', function() {
+                const navbar = document.querySelector('.navbar');
+                if (window.scrollY > 50) {
+                    navbar.style.background = 'rgba(255, 255, 255, 0.98)';
+                    navbar.style.boxShadow = '0 5px 20px rgba(0, 0, 0, 0.1)';
+                } else {
+                    navbar.style.background = 'rgba(255, 255, 255, 0.95)';
+                    navbar.style.boxShadow = '0 2px 20px rgba(0, 0, 0, 0.1)';
+                }
+            });
+        });
     </script>
 </body>
 </html>
