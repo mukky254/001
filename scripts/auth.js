@@ -1,13 +1,28 @@
-// Auth JavaScript - SIMPLIFIED
-const API_BASE_URL = 'https://your-backend.onrender.com'; // ← CHANGE THIS
+// scripts/auth.js - FIXED
+const API_BASE_URL = 'https://zero0-1-r0xs.onrender.com';
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Auth page loaded');
-    console.log('API Base URL:', API_BASE_URL);
+    console.log('✅ Auth page loaded');
+    console.log('📡 Backend URL:', API_BASE_URL);
     
     setupEventListeners();
     checkExistingSession();
+    
+    // Test backend connection immediately
+    testBackendConnection();
 });
+
+async function testBackendConnection() {
+    try {
+        console.log('Testing connection to backend...');
+        const response = await fetch(API_BASE_URL);
+        const data = await response.json();
+        console.log('✅ Backend is working:', data);
+    } catch (error) {
+        console.error('❌ Backend connection failed:', error);
+        showAlert('⚠️ Backend connection failed. Using test mode.', 'warning');
+    }
+}
 
 function setupEventListeners() {
     // Tab switching
@@ -44,10 +59,19 @@ function setupEventListeners() {
         });
     });
     
-    // Init sample data button
+    // Initialize sample data button
     const initBtn = document.getElementById('initSampleBtn');
     if (initBtn) {
         initBtn.addEventListener('click', initializeSampleData);
+    }
+    
+    // Switch to login link
+    const switchToLogin = document.querySelector('.switch-to-login');
+    if (switchToLogin) {
+        switchToLogin.addEventListener('click', function(e) {
+            e.preventDefault();
+            switchTab('login');
+        });
     }
 }
 
@@ -85,7 +109,7 @@ async function handleLogin(e) {
     loginBtn.disabled = true;
     
     try {
-        console.log('Sending request to:', `${API_BASE_URL}/api/auth/login`);
+        console.log('Sending login request to:', `${API_BASE_URL}/api/auth/login`);
         
         const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
             method: 'POST',
@@ -108,7 +132,7 @@ async function handleLogin(e) {
                 timestamp: new Date().toISOString()
             }));
             
-            showAlert('Login successful! Redirecting...', 'success');
+            showAlert('✅ Login successful! Redirecting...', 'success');
             
             // Redirect after delay
             setTimeout(() => {
@@ -121,24 +145,10 @@ async function handleLogin(e) {
         
     } catch (error) {
         console.error('Login error:', error);
-        showAlert(error.message || 'Login failed. Please try again.', 'error');
+        showAlert('❌ ' + error.message, 'error');
         
-        // Fallback to test credentials
-        if (id === 'AD001' && password === 'admin123' && role === 'admin') {
-            showAlert('Using test credentials...', 'warning');
-            const testUser = {
-                id: 'AD001',
-                name: 'Test Admin',
-                email: 'admin@test.com',
-                role: 'admin'
-            };
-            localStorage.setItem('attendance_session', JSON.stringify({
-                user: testUser,
-                token: 'test_token',
-                timestamp: new Date().toISOString()
-            }));
-            setTimeout(() => window.location.href = 'dashboard.html', 1000);
-        }
+        // Fallback to hardcoded test credentials
+        showAlert('Try test credentials: Admin: AD001/admin123, Lecturer: LT001/lecturer123, Student: ST001/student123', 'info');
         
     } finally {
         loginBtn.innerHTML = originalText;
@@ -157,15 +167,38 @@ async function handleRegister(e) {
     const password = document.getElementById('regPassword').value;
     const confirmPassword = document.getElementById('regConfirmPassword').value;
     
+    console.log('Register attempt:', { id, name, role });
+    
     // Validation
     if (!role || !name || !id || !email || !phone || !password) {
-        showAlert('Please fill in all fields', 'error');
+        showAlert('Please fill in all required fields', 'error');
         return;
     }
     
     if (password !== confirmPassword) {
         showAlert('Passwords do not match', 'error');
         return;
+    }
+    
+    // Prepare data
+    const userData = {
+        role,
+        name,
+        id,
+        email,
+        phone,
+        password
+    };
+    
+    // Add role-specific fields
+    if (role === 'student') {
+        const course = document.getElementById('regCourse').value;
+        const year = document.getElementById('regYear').value;
+        userData.course = course;
+        userData.year = year;
+    } else if (role === 'lecturer') {
+        const department = document.getElementById('regDepartment').value;
+        userData.department = department;
     }
     
     // Show loading
@@ -175,24 +208,23 @@ async function handleRegister(e) {
     registerBtn.disabled = true;
     
     try {
+        console.log('Sending register request to:', `${API_BASE_URL}/api/auth/register`);
+        
         const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-                id, name, email, phone, password, role,
-                course: role === 'student' ? document.getElementById('regCourse').value : '',
-                year: role === 'student' ? document.getElementById('regYear').value : 1
-            })
+            body: JSON.stringify(userData)
         });
         
         const data = await response.json();
+        console.log('Register response:', data);
         
         if (response.ok && data.success) {
-            showAlert('Registration successful! Please login.', 'success');
+            showAlert('✅ Registration successful! Please login.', 'success');
             
-            // Switch to login tab
+            // Clear form and switch to login
             setTimeout(() => {
                 document.getElementById('registerFormData').reset();
                 switchTab('login');
@@ -206,7 +238,11 @@ async function handleRegister(e) {
         
     } catch (error) {
         console.error('Register error:', error);
-        showAlert(error.message || 'Registration failed. Please try again.', 'error');
+        showAlert('❌ ' + error.message, 'error');
+        
+        // Fallback - show test credentials
+        showAlert('For testing, use: Admin: AD001/admin123, Lecturer: LT001/lecturer123, Student: ST001/student123', 'info');
+        
     } finally {
         registerBtn.innerHTML = originalText;
         registerBtn.disabled = false;
@@ -234,9 +270,22 @@ async function initializeSampleData() {
         if (response.ok && data.success) {
             showAlert('✅ Sample data initialized! Use test credentials to login.', 'success');
             
-            // Show credentials
+            // Switch to login tab and show credentials
             setTimeout(() => {
                 switchTab('login');
+                
+                // Update sample data info
+                const sampleInfo = document.querySelector('.sample-data-info');
+                if (sampleInfo) {
+                    sampleInfo.innerHTML = `
+                        <p><strong>✅ Sample Users Created:</strong></p>
+                        <ul>
+                            <li><strong>Admin:</strong> ID: AD001, Password: admin123</li>
+                            <li><strong>Lecturer:</strong> ID: LT001, Password: lecturer123</li>
+                            <li><strong>Student:</strong> ID: ST001, Password: student123</li>
+                        </ul>
+                    `;
+                }
             }, 2000);
             
         } else {
@@ -245,9 +294,9 @@ async function initializeSampleData() {
         
     } catch (error) {
         console.error('Init error:', error);
-        showAlert('Failed to initialize sample data. Using hardcoded credentials instead.', 'warning');
+        showAlert('❌ ' + error.message, 'error');
         
-        // Fallback - just show test credentials
+        // Show fallback credentials
         showAlert(`
             <strong>Test Credentials:</strong><br>
             • Admin: ID: AD001, Password: admin123<br>
@@ -267,7 +316,7 @@ function checkExistingSession() {
         try {
             const sessionData = JSON.parse(session);
             if (sessionData.user) {
-                // Redirect to dashboard
+                // Redirect to dashboard if already logged in
                 window.location.href = 'dashboard.html';
             }
         } catch (e) {
@@ -277,7 +326,61 @@ function checkExistingSession() {
     }
 }
 
-// Global logout function
+function showAlert(message, type = 'info') {
+    // Create or get alert container
+    let alertContainer = document.getElementById('authAlerts');
+    if (!alertContainer) {
+        alertContainer = document.createElement('div');
+        alertContainer.id = 'authAlerts';
+        alertContainer.className = 'auth-alerts';
+        document.body.appendChild(alertContainer);
+    }
+    
+    // Create alert
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type}`;
+    
+    // Set icon based on type
+    let icon = 'info-circle';
+    if (type === 'success') icon = 'check-circle';
+    if (type === 'error') icon = 'exclamation-circle';
+    if (type === 'warning') icon = 'exclamation-triangle';
+    
+    alert.innerHTML = `
+        <i class="fas fa-${icon}"></i>
+        <span>${message}</span>
+        <button class="alert-close" style="
+            background: none;
+            border: none;
+            color: inherit;
+            margin-left: auto;
+            cursor: pointer;
+        ">×</button>
+    `;
+    
+    alertContainer.appendChild(alert);
+    
+    // Add close functionality
+    const closeBtn = alert.querySelector('.alert-close');
+    closeBtn.addEventListener('click', () => {
+        alert.style.opacity = '0';
+        alert.style.transform = 'translateX(100%)';
+        setTimeout(() => alert.remove(), 300);
+    });
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        if (alert.parentNode) {
+            alert.style.opacity = '0';
+            alert.style.transform = 'translateX(100%)';
+            setTimeout(() => alert.remove(), 300);
+        }
+    }, 5000);
+}
+
+// Make functions globally available
+window.showAlert = showAlert;
+window.API_BASE_URL = API_BASE_URL;
 window.logout = function() {
     if (confirm('Are you sure you want to logout?')) {
         localStorage.removeItem('attendance_session');
