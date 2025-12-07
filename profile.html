@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile - IN Attendance System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/dashboard.css">
+    <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
+</head>
+<body>
+    <!-- Sidebar (Same as dashboard) -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-brand">
+                <i class="fas fa-graduation-cap"></i>
+                <span>IN Attendance</span>
+            </div>
+            <button class="sidebar-close" id="sidebarClose">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="sidebar-user">
+            <div class="user-avatar" id="userAvatar">
+                <span>JD</span>
+            </div>
+            <div class="user-info">
+                <h4 id="userName">John Doe</h4>
+                <span class="user-role" id="userRole">Student</span>
+            </div>
+        </div>
+
+        <nav class="sidebar-menu">
+            <div class="menu-section">
+                <div class="menu-title">MAIN</div>
+                <a href="dashboard.html" class="menu-item">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="profile.html" class="menu-item active">
+                    <i class="fas fa-user"></i>
+                    <span>My Profile</span>
+                </a>
+            </div>
+
+            <!-- Role-specific menus will be shown by JavaScript -->
+            
+            <div class="menu-section">
+                <div class="menu-title">ACCOUNT</div>
+                <a href="#" class="menu-item" onclick="changePassword()">
+                    <i class="fas fa-key"></i>
+                    <span>Change Password</span>
+                </a>
+                <a href="#" class="menu-item" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <button class="menu-toggle" id="menuToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="page-title">
+                    <h1>My Profile</h1>
+                    <small>Manage your account information</small>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="user-dropdown" id="userDropdown">
+                    <div class="dropdown-toggle">
+                        <div class="user-mini">
+                            <div class="mini-avatar" id="miniAvatar">JD</div>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Content Area -->
+        <div class="content-area" id="contentArea">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-lg-4">
+                        <!-- Profile Card -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">Profile Information</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="profile-display">
+                                    <div class="profile-avatar-large" id="profileAvatar">
+                                        <span>JD</span>
+                                    </div>
+                                    <h4 id="displayName">John Doe</h4>
+                                    <p class="text-muted" id="displayRole">Student</p>
+                                    <div class="profile-info">
+                                        <div class="info-item">
+                                            <i class="fas fa-id-card"></i>
+                                            <span id="displayId">ST001</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <i class="fas fa-envelope"></i>
+                                            <span id="displayEmail">john@example.com</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <i class="fas fa-phone"></i>
+                                            <span id="displayPhone">+254 712 345 678</span>
+                                        </div>
+                                        <div class="info-item" id="displayCourse" style="display: none;">
+                                            <i class="fas fa-book"></i>
+                                            <span>Computer Science - Year 2</span>
+                                        </div>
+                                        <div class="info-item" id="displayDepartment" style="display: none;">
+                                            <i class="fas fa-building"></i>
+                                            <span>Computer Science Department</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-8">
+                        <!-- Edit Profile Form -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">Edit Profile</h3>
+                            </div>
+                            <div class="card-body">
+                                <form id="profileForm">
+                                    <div class="form-group">
+                                        <label for="profileName">Full Name</label>
+                                        <input type="text" id="profileName" class="form-control" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="profileEmail">Email Address</label>
+                                        <input type="email" id="profileEmail" class="form-control" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="profilePhone">Phone Number</label>
+                                        <input type="tel" id="profilePhone" class="form-control" required>
+                                    </div>
+                                    <div class="form-group" id="profileCourseField" style="display: none;">
+                                        <label for="profileCourse">Course</label>
+                                        <input type="text" id="profileCourse" class="form-control">
+                                    </div>
+                                    <div class="form-group" id="profileDepartmentField" style="display: none;">
+                                        <label for="profileDepartment">Department</label>
+                                        <input type="text" id="profileDepartment" class="form-control">
+                                    </div>
+                                    <button type="submit" class="btn btn-primary" id="updateBtn">
+                                        <i class="fas fa-save"></i> Update Profile
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- Change Password -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">Change Password</h3>
+                            </div>
+                            <div class="card-body">
+                                <form id="passwordForm">
+                                    <div class="form-group">
+                                        <label for="currentPassword">Current Password</label>
+                                        <input type="password" id="currentPassword" class="form-control" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="newPassword">New Password</label>
+                                        <input type="password" id="newPassword" class="form-control" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="confirmPassword">Confirm New Password</label>
+                                        <input type="password" id="confirmPassword" class="form-control" required>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary" id="changePasswordBtn">
+                                        <i class="fas fa-key"></i> Change Password
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="scripts/main.js"></script>
+    <script src="scripts/dashboard.js"></script>
+    <script>
+        // Profile-specific JavaScript
+        document.addEventListener('DOMContentLoaded', function() {
+            const sessionData = localStorage.getItem('attendance_session');
+            if (!sessionData) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            const session = JSON.parse(sessionData);
+            const user = session.user;
+
+            // Update user info
+            document.getElementById('userName').textContent = user.name;
+            document.getElementById('userRole').textContent = user.role.charAt(0).toUpperCase() + user.role.slice(1);
+            
+            // Update profile display
+            const avatarText = getInitials(user.name);
+            document.getElementById('userAvatar').textContent = avatarText;
+            document.getElementById('miniAvatar').textContent = avatarText;
+            document.getElementById('profileAvatar').innerHTML = avatarText;
+            document.getElementById('displayName').textContent = user.name;
+            document.getElementById('displayRole').textContent = user.role.charAt(0).toUpperCase() + user.role.slice(1);
+            document.getElementById('displayId').textContent = user.id;
+            document.getElementById('displayEmail').textContent = user.email;
+            document.getElementById('displayPhone').textContent = user.phone;
+
+            // Update form fields
+            document.getElementById('profileName').value = user.name;
+            document.getElementById('profileEmail').value = user.email;
+            document.getElementById('profilePhone').value = user.phone;
+
+            // Show role-specific fields
+            if (user.role === 'student') {
+                document.getElementById('displayCourse').style.display = 'flex';
+                document.getElementById('profileCourseField').style.display = 'block';
+                document.getElementById('profileCourse').value = user.course || '';
+            } else if (user.role === 'lecturer') {
+                document.getElementById('displayDepartment').style.display = 'flex';
+                document.getElementById('profileDepartmentField').style.display = 'block';
+                document.getElementById('profileDepartment').value = user.department || '';
+            }
+
+            // Setup menu toggle
+            const menuToggle = document.getElementById('menuToggle');
+            const sidebarClose = document.getElementById('sidebarClose');
+            const sidebar = document.getElementById('sidebar');
+
+            if (menuToggle) {
+                menuToggle.addEventListener('click', () => {
+                    sidebar.classList.add('active');
+                });
+            }
+
+            if (sidebarClose) {
+                sidebarClose.addEventListener('click', () => {
+                    sidebar.classList.remove('active');
+                });
+            }
+
+            // Handle form submissions
+            document.getElementById('profileForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const updateBtn = document.getElementById('updateBtn');
+                const originalText = updateBtn.innerHTML;
+                
+                updateBtn.disabled = true;
+                updateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+
+                try {
+                    const response = await fetch(`${API_BASE_URL}/api/auth/update-profile`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${session.token}`
+                        },
+                        body: JSON.stringify({
+                            name: document.getElementById('profileName').value,
+                            email: document.getElementById('profileEmail').value,
+                            phone: document.getElementById('profilePhone').value,
+                            course: document.getElementById('profileCourse').value || '',
+                            department: document.getElementById('profileDepartment').value || ''
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok && data.success) {
+                        showAlert('Profile updated successfully', 'success');
+                        
+                        // Update session
+                        user.name = data.user.name;
+                        user.email = data.user.email;
+                        user.phone = data.user.phone;
+                        if (user.role === 'student') user.course = data.user.course;
+                        if (user.role === 'lecturer') user.department = data.user.department;
+                        
+                        localStorage.setItem('attendance_session', JSON.stringify(session));
+                        
+                        // Update display
+                        document.getElementById('displayName').textContent = user.name;
+                        document.getElementById('displayEmail').textContent = user.email;
+                        document.getElementById('displayPhone').textContent = user.phone;
+                        document.getElementById('userName').textContent = user.name;
+                    } else {
+                        throw new Error(data.message || 'Update failed');
+                    }
+                } catch (error) {
+                    showAlert(error.message, 'error');
+                } finally {
+                    updateBtn.disabled = false;
+                    updateBtn.innerHTML = originalText;
+                }
+            });
+
+            // Handle password change
+            document.getElementById('passwordForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const currentPassword = document.getElementById('currentPassword').value;
+                const newPassword = document.getElementById('newPassword').value;
+                const confirmPassword = document.getElementById('confirmPassword').value;
+                
+                if (newPassword !== confirmPassword) {
+                    showAlert('New passwords do not match', 'error');
+                    return;
+                }
+                
+                if (newPassword.length < 6) {
+                    showAlert('Password must be at least 6 characters', 'error');
+                    return;
+                }
+
+                const changePasswordBtn = document.getElementById('changePasswordBtn');
+                const originalText = changePasswordBtn.innerHTML;
+                
+                changePasswordBtn.disabled = true;
+                changePasswordBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Changing...';
+
+                try {
+                    const response = await fetch(`${API_BASE_URL}/api/auth/change-password`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${session.token}`
+                        },
+                        body: JSON.stringify({
+                            currentPassword,
+                            newPassword
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok && data.success) {
+                        showAlert('Password changed successfully', 'success');
+                        document.getElementById('passwordForm').reset();
+                    } else {
+                        throw new Error(data.message || 'Password change failed');
+                    }
+                } catch (error) {
+                    showAlert(error.message, 'error');
+                } finally {
+                    changePasswordBtn.disabled = false;
+                    changePasswordBtn.innerHTML = originalText;
+                }
+            });
+        });
+
+        function getInitials(name) {
+            return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+        }
+
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                localStorage.removeItem('attendance_session');
+                window.location.href = 'index.html';
+            }
+        }
+    </script>
+</body>
+</html>
