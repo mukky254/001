@@ -9,6 +9,42 @@
     <link rel="stylesheet" href="styles/main.css">
     <link rel="stylesheet" href="styles/auth.css">
     <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
+    <style>
+        /* Additional styles for alerts */
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: slideIn 0.3s ease-out;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .alert-success {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+        .alert-info {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #bfdbfe;
+        }
+        .alert-warning {
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fde68a;
+        }
+    </style>
 </head>
 <body>
     <div class="auth-container">
@@ -39,7 +75,7 @@
                         <div class="form-group">
                             <label for="loginId">ID Number</label>
                             <input type="text" id="loginId" class="form-control" 
-                                   placeholder="Enter your admission or staff number" required>
+                                   placeholder="Enter your ID" required>
                         </div>
                         <div class="form-group">
                             <label for="loginPassword">Password</label>
@@ -65,13 +101,9 @@
                                 <input type="checkbox" id="rememberMe">
                                 <label for="rememberMe">Remember me</label>
                             </div>
-                            <a href="#" class="forgot-password">Forgot Password?</a>
                         </div>
                         <button type="submit" class="btn btn-primary btn-block" id="loginBtn">
-                            <span class="btn-text">Login</span>
-                            <span class="btn-spinner" style="display: none;">
-                                <i class="fas fa-spinner fa-spin"></i>
-                            </span>
+                            <i class="fas fa-sign-in-alt"></i> Login
                         </button>
                     </form>
 
@@ -84,7 +116,7 @@
                     </button>
 
                     <div class="sample-data-info">
-                        <p><strong>Sample Users:</strong></p>
+                        <p><strong>Test Credentials:</strong></p>
                         <ul>
                             <li><strong>Admin:</strong> ID: AD001, Password: admin123</li>
                             <li><strong>Lecturer:</strong> ID: LT001, Password: lecturer123</li>
@@ -112,7 +144,7 @@
                         <div class="form-group">
                             <label for="regId">ID Number</label>
                             <input type="text" id="regId" class="form-control" 
-                                   placeholder="Enter admission or staff number" required>
+                                   placeholder="Enter ID number" required>
                         </div>
                         <div class="form-group">
                             <label for="regEmail">Email Address</label>
@@ -132,10 +164,6 @@
                                 <button type="button" class="password-toggle">
                                     <i class="fas fa-eye"></i>
                                 </button>
-                            </div>
-                            <div class="password-strength">
-                                <div class="strength-bar"></div>
-                                <span class="strength-text">Password strength: <span id="strengthText">Weak</span></span>
                             </div>
                         </div>
                         <div class="form-group">
@@ -174,21 +202,17 @@
                         <div class="form-group">
                             <div class="form-check">
                                 <input type="checkbox" id="acceptTerms" required>
-                                <label for="acceptTerms">I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a></label>
+                                <label for="acceptTerms">I agree to the Terms of Service</label>
                             </div>
                         </div>
                         <button type="submit" class="btn btn-primary btn-block" id="registerBtn">
-                            <span class="btn-text">Create Account</span>
-                            <span class="btn-spinner" style="display: none;">
-                                <i class="fas fa-spinner fa-spin"></i>
-                            </span>
+                            <i class="fas fa-user-plus"></i> Create Account
                         </button>
                     </form>
                 </div>
             </div>
 
             <div class="auth-footer">
-                <p>By continuing, you agree to our <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.</p>
                 <p>Already have an account? <a href="#" class="switch-to-login">Login here</a></p>
             </div>
         </div>
@@ -196,6 +220,347 @@
         <div class="auth-alerts" id="authAlerts"></div>
     </div>
 
-    <script src="scripts/auth.js"></script>
+    <script>
+        // INLINE JAVASCRIPT - NO EXTERNAL FILE NEEDED
+        const API_BASE_URL = 'https://zero0-1-r0xs.onrender.com';
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('✅ Auth page loaded');
+            console.log('📡 Backend URL:', API_BASE_URL);
+            
+            setupEventListeners();
+            checkExistingSession();
+        });
+        
+        function setupEventListeners() {
+            // Tab switching
+            document.querySelectorAll('.auth-tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    switchTab(this.dataset.tab);
+                });
+            });
+            
+            // Role selection
+            const regRole = document.getElementById('regRole');
+            if (regRole) {
+                regRole.addEventListener('change', function() {
+                    document.getElementById('studentFields').style.display = this.value === 'student' ? 'block' : 'none';
+                    document.getElementById('lecturerFields').style.display = this.value === 'lecturer' ? 'block' : 'none';
+                });
+            }
+            
+            // Password toggle
+            document.querySelectorAll('.password-toggle').forEach(toggle => {
+                toggle.addEventListener('click', function() {
+                    const input = this.parentElement.querySelector('input');
+                    const icon = this.querySelector('i');
+                    if (input.type === 'password') {
+                        input.type = 'text';
+                        icon.className = 'fas fa-eye-slash';
+                    } else {
+                        input.type = 'password';
+                        icon.className = 'fas fa-eye';
+                    }
+                });
+            });
+            
+            // Login form
+            const loginForm = document.getElementById('loginFormData');
+            if (loginForm) {
+                loginForm.addEventListener('submit', handleLogin);
+            }
+            
+            // Register form
+            const registerForm = document.getElementById('registerFormData');
+            if (registerForm) {
+                registerForm.addEventListener('submit', handleRegister);
+            }
+            
+            // Initialize sample data
+            const initBtn = document.getElementById('initSampleBtn');
+            if (initBtn) {
+                initBtn.addEventListener('click', initializeSampleData);
+            }
+            
+            // Switch to login link
+            const switchToLogin = document.querySelector('.switch-to-login');
+            if (switchToLogin) {
+                switchToLogin.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    switchTab('login');
+                });
+            }
+        }
+        
+        function switchTab(tabName) {
+            // Update tabs
+            document.querySelectorAll('.auth-tab').forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.tab === tabName);
+            });
+            
+            // Update forms
+            document.querySelectorAll('.auth-form').forEach(form => {
+                form.classList.toggle('active', form.id === tabName + 'Form');
+            });
+        }
+        
+        async function handleLogin(e) {
+            e.preventDefault();
+            
+            const id = document.getElementById('loginId').value;
+            const password = document.getElementById('loginPassword').value;
+            const role = document.getElementById('loginRole').value;
+            
+            // Validation
+            if (!id || !password || !role) {
+                showAlert('Please fill in all fields', 'error');
+                return;
+            }
+            
+            const loginBtn = document.getElementById('loginBtn');
+            const originalText = loginBtn.innerHTML;
+            loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging in...';
+            loginBtn.disabled = true;
+            
+            try {
+                console.log('Logging in to:', API_BASE_URL);
+                
+                const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ id, password, role })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    // Save session
+                    localStorage.setItem('attendance_session', JSON.stringify({
+                        user: data.user,
+                        token: data.token,
+                        timestamp: new Date().toISOString()
+                    }));
+                    
+                    showAlert('✅ Login successful! Redirecting...', 'success');
+                    
+                    setTimeout(() => {
+                        window.location.href = 'dashboard.html';
+                    }, 1000);
+                    
+                } else {
+                    throw new Error(data.message || 'Login failed');
+                }
+                
+            } catch (error) {
+                console.error('Login error:', error);
+                showAlert('❌ Login failed. Try test credentials.', 'error');
+                
+                // Fallback test login
+                const testUsers = {
+                    'AD001': { password: 'admin123', role: 'admin', name: 'Admin User', email: 'admin@test.com' },
+                    'LT001': { password: 'lecturer123', role: 'lecturer', name: 'Lecturer User', email: 'lecturer@test.com' },
+                    'ST001': { password: 'student123', role: 'student', name: 'Student User', email: 'student@test.com' }
+                };
+                
+                if (testUsers[id] && testUsers[id].password === password && testUsers[id].role === role) {
+                    showAlert('✅ Using test login. Redirecting...', 'success');
+                    
+                    localStorage.setItem('attendance_session', JSON.stringify({
+                        user: {
+                            id: id,
+                            name: testUsers[id].name,
+                            email: testUsers[id].email,
+                            role: role
+                        },
+                        token: 'test_token',
+                        timestamp: new Date().toISOString()
+                    }));
+                    
+                    setTimeout(() => {
+                        window.location.href = 'dashboard.html';
+                    }, 1000);
+                }
+                
+            } finally {
+                loginBtn.innerHTML = originalText;
+                loginBtn.disabled = false;
+            }
+        }
+        
+        async function handleRegister(e) {
+            e.preventDefault();
+            
+            const role = document.getElementById('regRole').value;
+            const name = document.getElementById('regName').value;
+            const id = document.getElementById('regId').value;
+            const email = document.getElementById('regEmail').value;
+            const phone = document.getElementById('regPhone').value;
+            const password = document.getElementById('regPassword').value;
+            const confirmPassword = document.getElementById('regConfirmPassword').value;
+            
+            // Validation
+            if (!role || !name || !id || !email || !phone || !password) {
+                showAlert('Please fill in all required fields', 'error');
+                return;
+            }
+            
+            if (password !== confirmPassword) {
+                showAlert('Passwords do not match', 'error');
+                return;
+            }
+            
+            const registerBtn = document.getElementById('registerBtn');
+            const originalText = registerBtn.innerHTML;
+            registerBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Registering...';
+            registerBtn.disabled = true;
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        role,
+                        name,
+                        id,
+                        email,
+                        phone,
+                        password,
+                        course: role === 'student' ? document.getElementById('regCourse').value : '',
+                        year: role === 'student' ? document.getElementById('regYear').value : 1,
+                        department: role === 'lecturer' ? document.getElementById('regDepartment').value : ''
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    showAlert('✅ Registration successful! Please login.', 'success');
+                    
+                    setTimeout(() => {
+                        document.getElementById('registerFormData').reset();
+                        switchTab('login');
+                        document.getElementById('loginId').value = id;
+                        document.getElementById('loginRole').value = role;
+                    }, 1500);
+                    
+                } else {
+                    throw new Error(data.message || 'Registration failed');
+                }
+                
+            } catch (error) {
+                console.error('Register error:', error);
+                showAlert('❌ Registration failed. Try test login instead.', 'error');
+                
+                // Show test credentials
+                showAlert(`
+                    <strong>Test Credentials:</strong><br>
+                    • Admin: ID: AD001, Password: admin123<br>
+                    • Lecturer: ID: LT001, Password: lecturer123<br>
+                    • Student: ID: ST001, Password: student123
+                `, 'info');
+                
+            } finally {
+                registerBtn.innerHTML = originalText;
+                registerBtn.disabled = false;
+            }
+        }
+        
+        async function initializeSampleData() {
+            if (!confirm('Initialize sample data?')) return;
+            
+            const initBtn = document.getElementById('initSampleBtn');
+            const originalText = initBtn.innerHTML;
+            initBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Initializing...';
+            initBtn.disabled = true;
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/init-sample-data`, {
+                    method: 'POST'
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    showAlert('✅ Sample data initialized!', 'success');
+                    
+                    setTimeout(() => {
+                        switchTab('login');
+                    }, 2000);
+                    
+                } else {
+                    throw new Error(data.message || 'Failed to initialize');
+                }
+                
+            } catch (error) {
+                console.error('Init error:', error);
+                showAlert('❌ Failed to initialize. Using hardcoded test data.', 'error');
+                
+                // Update sample info
+                const sampleInfo = document.querySelector('.sample-data-info');
+                if (sampleInfo) {
+                    sampleInfo.innerHTML = `
+                        <p><strong>Test Credentials:</strong></p>
+                        <ul>
+                            <li><strong>Admin:</strong> ID: AD001, Password: admin123</li>
+                            <li><strong>Lecturer:</strong> ID: LT001, Password: lecturer123</li>
+                            <li><strong>Student:</strong> ID: ST001, Password: student123</li>
+                        </ul>
+                    `;
+                }
+                
+            } finally {
+                initBtn.innerHTML = originalText;
+                initBtn.disabled = false;
+            }
+        }
+        
+        function checkExistingSession() {
+            const session = localStorage.getItem('attendance_session');
+            if (session) {
+                try {
+                    const sessionData = JSON.parse(session);
+                    if (sessionData.user) {
+                        window.location.href = 'dashboard.html';
+                    }
+                } catch (e) {
+                    localStorage.removeItem('attendance_session');
+                }
+            }
+        }
+        
+        function showAlert(message, type = 'info') {
+            const alertContainer = document.getElementById('authAlerts');
+            if (!alertContainer) return;
+            
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+                <span>${message}</span>
+                <button class="alert-close" style="
+                    background: none;
+                    border: none;
+                    color: inherit;
+                    margin-left: auto;
+                    cursor: pointer;
+                ">×</button>
+            `;
+            
+            alertContainer.appendChild(alert);
+            
+            // Close button
+            const closeBtn = alert.querySelector('.alert-close');
+            closeBtn.addEventListener('click', () => alert.remove());
+            
+            // Auto remove
+            setTimeout(() => {
+                if (alert.parentNode) alert.remove();
+            }, 5000);
+        }
+    </script>
 </body>
 </html>
