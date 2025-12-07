@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - IN Attendance System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/auth.css">
+    <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-header">
+            <a href="index.html" class="back-home">
+                <i class="fas fa-arrow-left"></i> Back to Home
+            </a>
+            <div class="auth-logo">
+                <i class="fas fa-graduation-cap"></i>
+                <span>IN Attendance System</span>
+            </div>
+        </div>
+        
+        <div class="auth-wrapper">
+            <div class="auth-card">
+                <div class="auth-tabs">
+                    <button class="auth-tab active" data-tab="login">
+                        <i class="fas fa-sign-in-alt"></i> Login
+                    </button>
+                    <button class="auth-tab" data-tab="register">
+                        <i class="fas fa-user-plus"></i> Register
+                    </button>
+                </div>
+
+                <!-- Login Form -->
+                <div class="auth-form active" id="loginForm">
+                    <form id="loginFormData">
+                        <div class="form-group">
+                            <label for="loginId">ID Number</label>
+                            <input type="text" id="loginId" class="form-control" 
+                                   placeholder="Enter your admission or staff number" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="loginPassword">Password</label>
+                            <div class="password-input">
+                                <input type="password" id="loginPassword" class="form-control" 
+                                       placeholder="Enter your password" required>
+                                <button type="button" class="password-toggle">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="loginRole">Login as</label>
+                            <select id="loginRole" class="form-control" required>
+                                <option value="">Select Role</option>
+                                <option value="student">Student</option>
+                                <option value="lecturer">Lecturer</option>
+                                <option value="admin">Admin</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <div class="form-check">
+                                <input type="checkbox" id="rememberMe">
+                                <label for="rememberMe">Remember me</label>
+                            </div>
+                            <a href="#" class="forgot-password">Forgot Password?</a>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block" id="loginBtn">
+                            <span class="btn-text">Login</span>
+                            <span class="btn-spinner" style="display: none;">
+                                <i class="fas fa-spinner fa-spin"></i>
+                            </span>
+                        </button>
+                    </form>
+
+                    <div class="auth-divider">
+                        <span>Or initialize sample data</span>
+                    </div>
+
+                    <button type="button" class="btn btn-warning btn-block" id="initSampleBtn">
+                        <i class="fas fa-database"></i> Initialize Sample Data
+                    </button>
+
+                    <div class="sample-data-info">
+                        <p><strong>Sample Users:</strong></p>
+                        <ul>
+                            <li><strong>Admin:</strong> ID: AD001, Password: admin123</li>
+                            <li><strong>Lecturer:</strong> ID: LT001, Password: lecturer123</li>
+                            <li><strong>Student:</strong> ID: ST001, Password: student123</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Register Form -->
+                <div class="auth-form" id="registerForm">
+                    <form id="registerFormData">
+                        <div class="form-group">
+                            <label for="regRole">Register as</label>
+                            <select id="regRole" class="form-control" required>
+                                <option value="">Select Role</option>
+                                <option value="student">Student</option>
+                                <option value="lecturer">Lecturer</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="regName">Full Name</label>
+                            <input type="text" id="regName" class="form-control" 
+                                   placeholder="Enter your full name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="regId">ID Number</label>
+                            <input type="text" id="regId" class="form-control" 
+                                   placeholder="Enter admission or staff number" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="regEmail">Email Address</label>
+                            <input type="email" id="regEmail" class="form-control" 
+                                   placeholder="Enter your email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="regPhone">Phone Number</label>
+                            <input type="tel" id="regPhone" class="form-control" 
+                                   placeholder="Enter your phone number" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="regPassword">Password</label>
+                            <div class="password-input">
+                                <input type="password" id="regPassword" class="form-control" 
+                                       placeholder="Create a password" required>
+                                <button type="button" class="password-toggle">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            <div class="password-strength">
+                                <div class="strength-bar"></div>
+                                <span class="strength-text">Password strength: <span id="strengthText">Weak</span></span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="regConfirmPassword">Confirm Password</label>
+                            <div class="password-input">
+                                <input type="password" id="regConfirmPassword" class="form-control" 
+                                       placeholder="Confirm your password" required>
+                                <button type="button" class="password-toggle">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="form-group" id="studentFields" style="display: none;">
+                            <div class="row">
+                                <div class="col">
+                                    <label for="regCourse">Course</label>
+                                    <input type="text" id="regCourse" class="form-control" 
+                                           placeholder="e.g., Computer Science">
+                                </div>
+                                <div class="col">
+                                    <label for="regYear">Year</label>
+                                    <select id="regYear" class="form-control">
+                                        <option value="1">Year 1</option>
+                                        <option value="2">Year 2</option>
+                                        <option value="3">Year 3</option>
+                                        <option value="4">Year 4</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group" id="lecturerFields" style="display: none;">
+                            <label for="regDepartment">Department</label>
+                            <input type="text" id="regDepartment" class="form-control" 
+                                   placeholder="e.g., Computer Science Department">
+                        </div>
+                        <div class="form-group">
+                            <div class="form-check">
+                                <input type="checkbox" id="acceptTerms" required>
+                                <label for="acceptTerms">I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a></label>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block" id="registerBtn">
+                            <span class="btn-text">Create Account</span>
+                            <span class="btn-spinner" style="display: none;">
+                                <i class="fas fa-spinner fa-spin"></i>
+                            </span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="auth-footer">
+                <p>By continuing, you agree to our <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.</p>
+                <p>Already have an account? <a href="#" class="switch-to-login">Login here</a></p>
+            </div>
+        </div>
+
+        <div class="auth-alerts" id="authAlerts"></div>
+    </div>
+
+    <script src="scripts/auth.js"></script>
+</body>
+</html>
