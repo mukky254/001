@@ -1,4 +1,4 @@
-// Main JavaScript
+// scripts/main.js - COMMON FUNCTIONS
 const API_BASE_URL = 'https://zero0-1-r0xs.onrender.com';
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -9,55 +9,16 @@ document.addEventListener('DOMContentLoaded', function() {
     if (mobileMenuBtn && navMenu) {
         mobileMenuBtn.addEventListener('click', function() {
             navMenu.style.display = navMenu.style.display === 'flex' ? 'none' : 'flex';
-            if (navMenu.style.display === 'flex') {
-                navMenu.style.flexDirection = 'column';
-                navMenu.style.position = 'absolute';
-                navMenu.style.top = '100%';
-                navMenu.style.left = '0';
-                navMenu.style.right = '0';
-                navMenu.style.background = 'white';
-                navMenu.style.padding = '1rem';
-                navMenu.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
-            }
+            navMenu.style.flexDirection = 'column';
+            navMenu.style.position = 'absolute';
+            navMenu.style.top = '100%';
+            navMenu.style.left = '0';
+            navMenu.style.right = '0';
+            navMenu.style.background = 'white';
+            navMenu.style.padding = '1rem';
+            navMenu.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
         });
     }
-    
-    // Animate statistics counters
-    const statNumbers = document.querySelectorAll('.stat-number');
-    if (statNumbers.length > 0) {
-        statNumbers.forEach(stat => {
-            const target = parseInt(stat.getAttribute('data-count') || '0');
-            const increment = target / 100;
-            let current = 0;
-            
-            const timer = setInterval(() => {
-                current += increment;
-                if (current >= target) {
-                    stat.textContent = target;
-                    clearInterval(timer);
-                } else {
-                    stat.textContent = Math.floor(current);
-                }
-            }, 20);
-        });
-    }
-    
-    // Smooth scrolling for anchor links
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-        anchor.addEventListener('click', function(e) {
-            e.preventDefault();
-            const targetId = this.getAttribute('href');
-            if (targetId === '#') return;
-            
-            const targetElement = document.querySelector(targetId);
-            if (targetElement) {
-                window.scrollTo({
-                    top: targetElement.offsetTop - 80,
-                    behavior: 'smooth'
-                });
-            }
-        });
-    });
     
     // Check if user is logged in
     checkLoginStatus();
@@ -170,6 +131,6 @@ function getAlertIcon(type) {
     }
 }
 
-// Make functions available globally
+// Make functions globally available
 window.showAlert = showAlert;
 window.API_BASE_URL = API_BASE_URL;
