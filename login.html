@@ -6,43 +6,303 @@
     <title>Login - IN Attendance System</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles/main.css">
-    <link rel="stylesheet" href="styles/auth.css">
-    <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
     <style>
-        /* Additional styles for alerts */
-        .alert {
-            padding: 12px 16px;
-            border-radius: 8px;
-            margin-bottom: 10px;
+        /* Reset and base styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Auth Container */
+        .auth-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Header */
+        .auth-header {
+            padding: 1.5rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .back-home {
+            color: white;
+            text-decoration: none;
             display: flex;
             align-items: center;
-            gap: 10px;
-            animation: slideIn 0.3s ease-out;
+            gap: 0.5rem;
         }
+        
+        .auth-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: white;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+        
+        /* Main Content */
+        .auth-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+        
+        .auth-card {
+            width: 100%;
+            max-width: 450px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        
+        /* Tabs */
+        .auth-tabs {
+            display: flex;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .auth-tab {
+            flex: 1;
+            padding: 1.25rem;
+            background: none;
+            border: none;
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #64748b;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        .auth-tab:hover {
+            color: #4361ee;
+            background: #f8fafc;
+        }
+        
+        .auth-tab.active {
+            color: #4361ee;
+            border-bottom: 3px solid #4361ee;
+        }
+        
+        /* Forms */
+        .auth-form {
+            padding: 2rem;
+            display: none;
+        }
+        
+        .auth-form.active {
+            display: block;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #334155;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.875rem;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: #4361ee;
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+        }
+        
+        .password-input {
+            position: relative;
+        }
+        
+        .password-toggle {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #64748b;
+            cursor: pointer;
+        }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            border: none;
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+        
+        .btn-primary {
+            background-color: #4361ee;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #3a56d4;
+        }
+        
+        .btn-warning {
+            background-color: #f59e0b;
+            color: white;
+        }
+        
+        .btn-warning:hover {
+            background-color: #d97706;
+        }
+        
+        .btn-block {
+            width: 100%;
+        }
+        
+        .auth-divider {
+            text-align: center;
+            margin: 1.5rem 0;
+            position: relative;
+        }
+        
+        .auth-divider::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: #e2e8f0;
+        }
+        
+        .auth-divider span {
+            background: white;
+            padding: 0 1rem;
+            color: #64748b;
+            font-size: 0.875rem;
+        }
+        
+        .sample-data-info {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1.5rem;
+            font-size: 0.875rem;
+        }
+        
+        .sample-data-info ul {
+            margin: 0.5rem 0 0 1.5rem;
+            color: #475569;
+        }
+        
+        .sample-data-info li {
+            margin-bottom: 0.25rem;
+        }
+        
+        /* Alerts */
+        .alert {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 1rem 1.25rem;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            max-width: 400px;
+            z-index: 9999;
+            animation: slideIn 0.3s ease-out;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
         @keyframes slideIn {
             from { transform: translateX(100%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
         }
+        
         .alert-success {
             background: #dcfce7;
             color: #166534;
             border: 1px solid #bbf7d0;
         }
+        
         .alert-error {
             background: #fee2e2;
             color: #991b1b;
             border: 1px solid #fecaca;
         }
+        
         .alert-info {
             background: #dbeafe;
             color: #1e40af;
             border: 1px solid #bfdbfe;
         }
+        
         .alert-warning {
             background: #fef3c7;
             color: #92400e;
             border: 1px solid #fde68a;
+        }
+        
+        /* Footer */
+        .auth-footer {
+            text-align: center;
+            margin-top: 2rem;
+            color: white;
+            max-width: 450px;
+        }
+        
+        .auth-footer a {
+            color: white;
+            text-decoration: underline;
+        }
+        
+        /* Responsive */
+        @media (max-width: 576px) {
+            .auth-card {
+                max-width: 100%;
+            }
+            
+            .auth-form {
+                padding: 1.5rem;
+            }
         }
     </style>
 </head>
@@ -75,13 +335,13 @@
                         <div class="form-group">
                             <label for="loginId">ID Number</label>
                             <input type="text" id="loginId" class="form-control" 
-                                   placeholder="Enter your ID" required>
+                                   placeholder="Enter AD001, LT001, or ST001" required>
                         </div>
                         <div class="form-group">
                             <label for="loginPassword">Password</label>
                             <div class="password-input">
                                 <input type="password" id="loginPassword" class="form-control" 
-                                       placeholder="Enter your password" required>
+                                       placeholder="Enter password" required value="admin123">
                                 <button type="button" class="password-toggle">
                                     <i class="fas fa-eye"></i>
                                 </button>
@@ -95,12 +355,6 @@
                                 <option value="lecturer">Lecturer</option>
                                 <option value="admin">Admin</option>
                             </select>
-                        </div>
-                        <div class="form-group">
-                            <div class="form-check">
-                                <input type="checkbox" id="rememberMe">
-                                <label for="rememberMe">Remember me</label>
-                            </div>
                         </div>
                         <button type="submit" class="btn btn-primary btn-block" id="loginBtn">
                             <i class="fas fa-sign-in-alt"></i> Login
@@ -118,9 +372,9 @@
                     <div class="sample-data-info">
                         <p><strong>Test Credentials:</strong></p>
                         <ul>
-                            <li><strong>Admin:</strong> ID: AD001, Password: admin123</li>
-                            <li><strong>Lecturer:</strong> ID: LT001, Password: lecturer123</li>
-                            <li><strong>Student:</strong> ID: ST001, Password: student123</li>
+                            <li><strong>Admin:</strong> ID: AD001, Password: admin123, Role: admin</li>
+                            <li><strong>Lecturer:</strong> ID: LT001, Password: lecturer123, Role: lecturer</li>
+                            <li><strong>Student:</strong> ID: ST001, Password: student123, Role: student</li>
                         </ul>
                     </div>
                 </div>
@@ -176,35 +430,6 @@
                                 </button>
                             </div>
                         </div>
-                        <div class="form-group" id="studentFields" style="display: none;">
-                            <div class="row">
-                                <div class="col">
-                                    <label for="regCourse">Course</label>
-                                    <input type="text" id="regCourse" class="form-control" 
-                                           placeholder="e.g., Computer Science">
-                                </div>
-                                <div class="col">
-                                    <label for="regYear">Year</label>
-                                    <select id="regYear" class="form-control">
-                                        <option value="1">Year 1</option>
-                                        <option value="2">Year 2</option>
-                                        <option value="3">Year 3</option>
-                                        <option value="4">Year 4</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="form-group" id="lecturerFields" style="display: none;">
-                            <label for="regDepartment">Department</label>
-                            <input type="text" id="regDepartment" class="form-control" 
-                                   placeholder="e.g., Computer Science Department">
-                        </div>
-                        <div class="form-group">
-                            <div class="form-check">
-                                <input type="checkbox" id="acceptTerms" required>
-                                <label for="acceptTerms">I agree to the Terms of Service</label>
-                            </div>
-                        </div>
                         <button type="submit" class="btn btn-primary btn-block" id="registerBtn">
                             <i class="fas fa-user-plus"></i> Create Account
                         </button>
@@ -216,20 +441,51 @@
                 <p>Already have an account? <a href="#" class="switch-to-login">Login here</a></p>
             </div>
         </div>
-
-        <div class="auth-alerts" id="authAlerts"></div>
     </div>
 
     <script>
-        // INLINE JAVASCRIPT - NO EXTERNAL FILE NEEDED
+        // ==================== CONFIGURATION ====================
         const API_BASE_URL = 'https://zero0-1-r0xs.onrender.com';
         
+        // ==================== UTILITY FUNCTIONS ====================
+        function showAlert(message, type = 'info') {
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.innerHTML = `
+                <i class="fas fa-${getAlertIcon(type)}"></i>
+                <span>${message}</span>
+                <button onclick="this.parentElement.remove()" style="
+                    background: none;
+                    border: none;
+                    color: inherit;
+                    margin-left: 15px;
+                    cursor: pointer;
+                ">×</button>
+            `;
+            
+            document.body.appendChild(alert);
+            
+            setTimeout(() => {
+                if (alert.parentNode) alert.remove();
+            }, 5000);
+        }
+        
+        function getAlertIcon(type) {
+            switch(type) {
+                case 'success': return 'check-circle';
+                case 'error': return 'exclamation-circle';
+                case 'warning': return 'exclamation-triangle';
+                default: return 'info-circle';
+            }
+        }
+        
+        // ==================== EVENT LISTENERS ====================
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('✅ Auth page loaded');
-            console.log('📡 Backend URL:', API_BASE_URL);
+            console.log('✅ Page loaded');
+            console.log('🔗 Backend URL:', API_BASE_URL);
             
             setupEventListeners();
-            checkExistingSession();
+            checkBackendConnection();
         });
         
         function setupEventListeners() {
@@ -239,15 +495,6 @@
                     switchTab(this.dataset.tab);
                 });
             });
-            
-            // Role selection
-            const regRole = document.getElementById('regRole');
-            if (regRole) {
-                regRole.addEventListener('change', function() {
-                    document.getElementById('studentFields').style.display = this.value === 'student' ? 'block' : 'none';
-                    document.getElementById('lecturerFields').style.display = this.value === 'lecturer' ? 'block' : 'none';
-                });
-            }
             
             // Password toggle
             document.querySelectorAll('.password-toggle').forEach(toggle => {
@@ -265,33 +512,22 @@
             });
             
             // Login form
-            const loginForm = document.getElementById('loginFormData');
-            if (loginForm) {
-                loginForm.addEventListener('submit', handleLogin);
-            }
+            document.getElementById('loginFormData').addEventListener('submit', handleLogin);
             
             // Register form
-            const registerForm = document.getElementById('registerFormData');
-            if (registerForm) {
-                registerForm.addEventListener('submit', handleRegister);
-            }
+            document.getElementById('registerFormData').addEventListener('submit', handleRegister);
             
             // Initialize sample data
-            const initBtn = document.getElementById('initSampleBtn');
-            if (initBtn) {
-                initBtn.addEventListener('click', initializeSampleData);
-            }
+            document.getElementById('initSampleBtn').addEventListener('click', initializeSampleData);
             
             // Switch to login link
-            const switchToLogin = document.querySelector('.switch-to-login');
-            if (switchToLogin) {
-                switchToLogin.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    switchTab('login');
-                });
-            }
+            document.querySelector('.switch-to-login').addEventListener('click', function(e) {
+                e.preventDefault();
+                switchTab('login');
+            });
         }
         
+        // ==================== TAB SWITCHING ====================
         function switchTab(tabName) {
             // Update tabs
             document.querySelectorAll('.auth-tab').forEach(tab => {
@@ -304,6 +540,21 @@
             });
         }
         
+        // ==================== BACKEND CONNECTION TEST ====================
+        async function checkBackendConnection() {
+            try {
+                console.log('Testing backend connection...');
+                const response = await fetch(API_BASE_URL);
+                const data = await response.json();
+                console.log('✅ Backend is working:', data);
+                showAlert('✅ Backend connected successfully!', 'success');
+            } catch (error) {
+                console.error('❌ Backend connection failed:', error);
+                showAlert('⚠️ Backend connection failed. Using offline mode.', 'warning');
+            }
+        }
+        
+        // ==================== LOGIN FUNCTION ====================
         async function handleLogin(e) {
             e.preventDefault();
             
@@ -311,29 +562,42 @@
             const password = document.getElementById('loginPassword').value;
             const role = document.getElementById('loginRole').value;
             
+            console.log('Login attempt:', { id, role });
+            
             // Validation
             if (!id || !password || !role) {
                 showAlert('Please fill in all fields', 'error');
                 return;
             }
             
+            // Show loading
             const loginBtn = document.getElementById('loginBtn');
             const originalText = loginBtn.innerHTML;
             loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging in...';
             loginBtn.disabled = true;
             
             try {
-                console.log('Logging in to:', API_BASE_URL);
+                console.log('Calling:', `${API_BASE_URL}/api/auth/login`);
                 
                 const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
                     },
                     body: JSON.stringify({ id, password, role })
                 });
                 
-                const data = await response.json();
+                console.log('Response status:', response.status);
+                
+                // Parse response
+                let data;
+                try {
+                    data = await response.json();
+                    console.log('Response data:', data);
+                } catch (parseError) {
+                    throw new Error('Invalid response from server');
+                }
                 
                 if (response.ok && data.success) {
                     // Save session
@@ -345,6 +609,7 @@
                     
                     showAlert('✅ Login successful! Redirecting...', 'success');
                     
+                    // Redirect to dashboard
                     setTimeout(() => {
                         window.location.href = 'dashboard.html';
                     }, 1000);
@@ -355,33 +620,10 @@
                 
             } catch (error) {
                 console.error('Login error:', error);
-                showAlert('❌ Login failed. Try test credentials.', 'error');
+                showAlert(`❌ ${error.message}`, 'error');
                 
-                // Fallback test login
-                const testUsers = {
-                    'AD001': { password: 'admin123', role: 'admin', name: 'Admin User', email: 'admin@test.com' },
-                    'LT001': { password: 'lecturer123', role: 'lecturer', name: 'Lecturer User', email: 'lecturer@test.com' },
-                    'ST001': { password: 'student123', role: 'student', name: 'Student User', email: 'student@test.com' }
-                };
-                
-                if (testUsers[id] && testUsers[id].password === password && testUsers[id].role === role) {
-                    showAlert('✅ Using test login. Redirecting...', 'success');
-                    
-                    localStorage.setItem('attendance_session', JSON.stringify({
-                        user: {
-                            id: id,
-                            name: testUsers[id].name,
-                            email: testUsers[id].email,
-                            role: role
-                        },
-                        token: 'test_token',
-                        timestamp: new Date().toISOString()
-                    }));
-                    
-                    setTimeout(() => {
-                        window.location.href = 'dashboard.html';
-                    }, 1000);
-                }
+                // Try offline test credentials
+                testOfflineLogin(id, password, role);
                 
             } finally {
                 loginBtn.innerHTML = originalText;
@@ -389,6 +631,40 @@
             }
         }
         
+        // ==================== OFFLINE FALLBACK ====================
+        function testOfflineLogin(id, password, role) {
+            const testUsers = {
+                'AD001': { password: 'admin123', role: 'admin', name: 'System Admin' },
+                'LT001': { password: 'lecturer123', role: 'lecturer', name: 'Dr. John Smith' },
+                'ST001': { password: 'student123', role: 'student', name: 'Alice Johnson' }
+            };
+            
+            if (testUsers[id] && testUsers[id].password === password && testUsers[id].role === role) {
+                showAlert('✅ Using offline test login. Redirecting...', 'success');
+                
+                localStorage.setItem('attendance_session', JSON.stringify({
+                    user: {
+                        id: id,
+                        name: testUsers[id].name,
+                        email: `${id.toLowerCase()}@test.com`,
+                        phone: '+254700000000',
+                        role: role,
+                        course: role === 'student' ? 'Computer Science' : '',
+                        year: role === 'student' ? 2 : 1
+                    },
+                    token: 'offline_test_token',
+                    timestamp: new Date().toISOString()
+                }));
+                
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 1000);
+            } else {
+                showAlert('❌ Invalid credentials. Try: AD001/admin123 (admin), LT001/lecturer123 (lecturer), ST001/student123 (student)', 'error');
+            }
+        }
+        
+        // ==================== REGISTER FUNCTION ====================
         async function handleRegister(e) {
             e.preventDefault();
             
@@ -411,6 +687,7 @@
                 return;
             }
             
+            // Show loading
             const registerBtn = document.getElementById('registerBtn');
             const originalText = registerBtn.innerHTML;
             registerBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Registering...';
@@ -420,7 +697,8 @@
                 const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
                     },
                     body: JSON.stringify({
                         role,
@@ -428,14 +706,16 @@
                         id,
                         email,
                         phone,
-                        password,
-                        course: role === 'student' ? document.getElementById('regCourse').value : '',
-                        year: role === 'student' ? document.getElementById('regYear').value : 1,
-                        department: role === 'lecturer' ? document.getElementById('regDepartment').value : ''
+                        password
                     })
                 });
                 
-                const data = await response.json();
+                let data;
+                try {
+                    data = await response.json();
+                } catch (parseError) {
+                    throw new Error('Invalid response from server');
+                }
                 
                 if (response.ok && data.success) {
                     showAlert('✅ Registration successful! Please login.', 'success');
@@ -453,15 +733,7 @@
                 
             } catch (error) {
                 console.error('Register error:', error);
-                showAlert('❌ Registration failed. Try test login instead.', 'error');
-                
-                // Show test credentials
-                showAlert(`
-                    <strong>Test Credentials:</strong><br>
-                    • Admin: ID: AD001, Password: admin123<br>
-                    • Lecturer: ID: LT001, Password: lecturer123<br>
-                    • Student: ID: ST001, Password: student123
-                `, 'info');
+                showAlert(`❌ ${error.message}`, 'error');
                 
             } finally {
                 registerBtn.innerHTML = originalText;
@@ -469,8 +741,9 @@
             }
         }
         
+        // ==================== INITIALIZE SAMPLE DATA ====================
         async function initializeSampleData() {
-            if (!confirm('Initialize sample data?')) return;
+            if (!confirm('This will initialize sample data. Continue?')) return;
             
             const initBtn = document.getElementById('initSampleBtn');
             const originalText = initBtn.innerHTML;
@@ -482,7 +755,12 @@
                     method: 'POST'
                 });
                 
-                const data = await response.json();
+                let data;
+                try {
+                    data = await response.json();
+                } catch (parseError) {
+                    throw new Error('Invalid response from server');
+                }
                 
                 if (response.ok && data.success) {
                     showAlert('✅ Sample data initialized!', 'success');
@@ -497,69 +775,15 @@
                 
             } catch (error) {
                 console.error('Init error:', error);
-                showAlert('❌ Failed to initialize. Using hardcoded test data.', 'error');
+                showAlert(`❌ ${error.message}`, 'error');
                 
-                // Update sample info
-                const sampleInfo = document.querySelector('.sample-data-info');
-                if (sampleInfo) {
-                    sampleInfo.innerHTML = `
-                        <p><strong>Test Credentials:</strong></p>
-                        <ul>
-                            <li><strong>Admin:</strong> ID: AD001, Password: admin123</li>
-                            <li><strong>Lecturer:</strong> ID: LT001, Password: lecturer123</li>
-                            <li><strong>Student:</strong> ID: ST001, Password: student123</li>
-                        </ul>
-                    `;
-                }
+                // Show test credentials anyway
+                showAlert('✅ Test credentials available: Admin: AD001/admin123, Lecturer: LT001/lecturer123, Student: ST001/student123', 'info');
                 
             } finally {
                 initBtn.innerHTML = originalText;
                 initBtn.disabled = false;
             }
-        }
-        
-        function checkExistingSession() {
-            const session = localStorage.getItem('attendance_session');
-            if (session) {
-                try {
-                    const sessionData = JSON.parse(session);
-                    if (sessionData.user) {
-                        window.location.href = 'dashboard.html';
-                    }
-                } catch (e) {
-                    localStorage.removeItem('attendance_session');
-                }
-            }
-        }
-        
-        function showAlert(message, type = 'info') {
-            const alertContainer = document.getElementById('authAlerts');
-            if (!alertContainer) return;
-            
-            const alert = document.createElement('div');
-            alert.className = `alert alert-${type}`;
-            alert.innerHTML = `
-                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
-                <span>${message}</span>
-                <button class="alert-close" style="
-                    background: none;
-                    border: none;
-                    color: inherit;
-                    margin-left: auto;
-                    cursor: pointer;
-                ">×</button>
-            `;
-            
-            alertContainer.appendChild(alert);
-            
-            // Close button
-            const closeBtn = alert.querySelector('.alert-close');
-            closeBtn.addEventListener('click', () => alert.remove());
-            
-            // Auto remove
-            setTimeout(() => {
-                if (alert.parentNode) alert.remove();
-            }, 5000);
         }
     </script>
 </body>
