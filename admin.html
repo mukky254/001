@@ -1,0 +1,1456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - IN Attendance System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles/dashboard.css">
+    <style>
+        /* Admin specific styles */
+        .admin-tabs {
+            display: flex;
+            border-bottom: 1px solid #e2e8f0;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .admin-tab {
+            padding: 1rem 1.5rem;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 500;
+            color: #64748b;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .admin-tab:hover {
+            color: #4361ee;
+            background: #f8fafc;
+        }
+        
+        .admin-tab.active {
+            color: #4361ee;
+            border-bottom-color: #4361ee;
+        }
+        
+        .admin-tab-content {
+            display: none;
+        }
+        
+        .admin-tab-content.active {
+            display: block;
+        }
+        
+        .admin-actions {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .search-box {
+            flex: 1;
+            min-width: 300px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card-admin {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            transition: transform 0.3s;
+        }
+        
+        .stat-card-admin:hover {
+            transform: translateY(-2px);
+        }
+        
+        .stat-icon-admin {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: white;
+        }
+        
+        .stat-icon-admin.students { background: #4361ee; }
+        .stat-icon-admin.lecturers { background: #3f37c9; }
+        .stat-icon-admin.courses { background: #4cc9f0; }
+        .stat-icon-admin.attendance { background: #4ade80; }
+        
+        .stat-info-admin h3 {
+            font-size: 1.75rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        .stat-info-admin p {
+            color: #64748b;
+            font-size: 0.875rem;
+            margin: 0;
+        }
+        
+        .student-avatar {
+            width: 40px;
+            height: 40px;
+            background: #4361ee;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            margin-right: 10px;
+        }
+        
+        .table-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .export-options {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .chart-container-admin {
+            height: 300px;
+            margin-top: 1rem;
+        }
+        
+        .user-form-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .user-form-modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-body {
+            padding: 1.5rem;
+        }
+        
+        .form-row {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .form-row .form-group {
+            flex: 1;
+        }
+        
+        @media (max-width: 768px) {
+            .admin-tabs {
+                flex-direction: column;
+            }
+            
+            .admin-tab {
+                text-align: left;
+                border-bottom: 1px solid #e2e8f0;
+                border-left: 3px solid transparent;
+            }
+            
+            .admin-tab.active {
+                border-left-color: #4361ee;
+                border-bottom-color: #e2e8f0;
+            }
+            
+            .form-row {
+                flex-direction: column;
+                gap: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-brand">
+                <i class="fas fa-graduation-cap"></i>
+                <span>IN Attendance</span>
+            </div>
+            <button class="sidebar-close" id="sidebarClose">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="sidebar-user">
+            <div class="user-avatar" id="userAvatar">
+                <span>AD</span>
+            </div>
+            <div class="user-info">
+                <h4 id="userName">Loading...</h4>
+                <span class="user-role" id="userRole">Admin</span>
+            </div>
+        </div>
+
+        <nav class="sidebar-menu">
+            <div class="menu-section">
+                <div class="menu-title">MAIN</div>
+                <a href="dashboard.html" class="menu-item">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="profile.html" class="menu-item">
+                    <i class="fas fa-user"></i>
+                    <span>My Profile</span>
+                </a>
+            </div>
+
+            <div class="menu-section">
+                <div class="menu-title">ADMIN</div>
+                <a href="admin.html" class="menu-item active">
+                    <i class="fas fa-users"></i>
+                    <span>Manage Students</span>
+                </a>
+                <a href="#" class="menu-item" onclick="switchTab('lecturers')">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                    <span>Manage Lecturers</span>
+                </a>
+                <a href="#" class="menu-item" onclick="switchTab('qr-codes')">
+                    <i class="fas fa-qrcode"></i>
+                    <span>QR Codes</span>
+                </a>
+                <a href="#" class="menu-item" onclick="switchTab('analytics')">
+                    <i class="fas fa-chart-pie"></i>
+                    <span>Analytics</span>
+                </a>
+            </div>
+
+            <div class="menu-section">
+                <div class="menu-title">ACCOUNT</div>
+                <a href="#" class="menu-item" onclick="changePassword()">
+                    <i class="fas fa-key"></i>
+                    <span>Change Password</span>
+                </a>
+                <a href="#" class="menu-item" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <button class="menu-toggle" id="menuToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="page-title">
+                    <h1>Admin Panel</h1>
+                    <small>System Administration</small>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="header-actions">
+                    <button class="header-btn" onclick="generateReport()">
+                        <i class="fas fa-file-export"></i> Export
+                    </button>
+                    <button class="header-btn" onclick="refreshAllData()">
+                        <i class="fas fa-sync"></i> Refresh
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Content Area -->
+        <div class="content-area">
+            <div class="container-fluid">
+                <!-- Stats Cards -->
+                <div class="stats-grid" id="adminStats">
+                    <!-- Stats will be loaded by JavaScript -->
+                </div>
+
+                <!-- Admin Tabs -->
+                <div class="admin-tabs">
+                    <button class="admin-tab active" data-tab="students">Students</button>
+                    <button class="admin-tab" data-tab="lecturers">Lecturers</button>
+                    <button class="admin-tab" data-tab="qr-codes">QR Codes</button>
+                    <button class="admin-tab" data-tab="analytics">Analytics</button>
+                </div>
+
+                <!-- Students Tab -->
+                <div class="admin-tab-content active" id="studentsContent">
+                    <div class="admin-actions">
+                        <div class="search-box">
+                            <input type="text" id="studentSearch" class="form-control" 
+                                   placeholder="Search students...">
+                        </div>
+                        <button class="btn btn-primary" onclick="openAddStudentModal()">
+                            <i class="fas fa-user-plus"></i> Add Student
+                        </button>
+                        <button class="btn btn-success" onclick="exportStudents()">
+                            <i class="fas fa-download"></i> Export
+                        </button>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Name</th>
+                                            <th>Email</th>
+                                            <th>Phone</th>
+                                            <th>Course</th>
+                                            <th>Year</th>
+                                            <th>Attendance</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="studentsTableBody">
+                                        <tr>
+                                            <td colspan="8" class="text-center">Loading students...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lecturers Tab -->
+                <div class="admin-tab-content" id="lecturersContent">
+                    <div class="admin-actions">
+                        <div class="search-box">
+                            <input type="text" id="lecturerSearch" class="form-control" 
+                                   placeholder="Search lecturers...">
+                        </div>
+                        <button class="btn btn-primary" onclick="openAddLecturerModal()">
+                            <i class="fas fa-user-plus"></i> Add Lecturer
+                        </button>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Name</th>
+                                            <th>Email</th>
+                                            <th>Phone</th>
+                                            <th>Department</th>
+                                            <th>QR Codes</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="lecturersTableBody">
+                                        <tr>
+                                            <td colspan="7" class="text-center">Loading lecturers...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- QR Codes Tab -->
+                <div class="admin-tab-content" id="qrCodesContent">
+                    <div class="export-options">
+                        <button class="btn btn-sm btn-outline" onclick="exportActiveQRCodes()">
+                            Active QR Codes
+                        </button>
+                        <button class="btn btn-sm btn-outline" onclick="exportAllQRCodes()">
+                            All QR Codes
+                        </button>
+                        <button class="btn btn-sm btn-outline" onclick="exportQRAttendance()">
+                            QR Attendance
+                        </button>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>QR Code ID</th>
+                                            <th>Unit</th>
+                                            <th>Lecturer</th>
+                                            <th>Created</th>
+                                            <th>Expires</th>
+                                            <th>Attendance</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="qrCodesTableBody">
+                                        <tr>
+                                            <td colspan="8" class="text-center">Loading QR codes...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Analytics Tab -->
+                <div class="admin-tab-content" id="analyticsContent">
+                    <div class="row">
+                        <div class="col-lg-8">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">Attendance Overview</h3>
+                                </div>
+                                <div class="card-body">
+                                    <div class="chart-container-admin">
+                                        <canvas id="attendanceChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">System Statistics</h3>
+                                </div>
+                                <div class="card-body">
+                                    <div id="systemStats">
+                                        <!-- Will be populated by JavaScript -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Student Modal -->
+    <div class="user-form-modal" id="addStudentModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add New Student</h3>
+                <button class="btn-close" onclick="closeAddStudentModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="addStudentForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="studentId">Student ID *</label>
+                            <input type="text" id="studentId" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="studentName">Full Name *</label>
+                            <input type="text" id="studentName" class="form-control" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="studentEmail">Email *</label>
+                        <input type="email" id="studentEmail" class="form-control" required>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="studentPhone">Phone *</label>
+                            <input type="tel" id="studentPhone" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="studentCourse">Course *</label>
+                            <input type="text" id="studentCourse" class="form-control" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="studentYear">Year *</label>
+                            <select id="studentYear" class="form-control" required>
+                                <option value="1">Year 1</option>
+                                <option value="2">Year 2</option>
+                                <option value="3">Year 3</option>
+                                <option value="4">Year 4</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="studentPassword">Password *</label>
+                            <input type="password" id="studentPassword" class="form-control" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <button type="submit" class="btn btn-primary btn-block">
+                            <i class="fas fa-save"></i> Save Student
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Lecturer Modal -->
+    <div class="user-form-modal" id="addLecturerModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add New Lecturer</h3>
+                <button class="btn-close" onclick="closeAddLecturerModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="addLecturerForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="lecturerId">Lecturer ID *</label>
+                            <input type="text" id="lecturerId" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="lecturerName">Full Name *</label>
+                            <input type="text" id="lecturerName" class="form-control" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="lecturerEmail">Email *</label>
+                        <input type="email" id="lecturerEmail" class="form-control" required>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="lecturerPhone">Phone *</label>
+                            <input type="tel" id="lecturerPhone" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="lecturerDepartment">Department *</label>
+                            <input type="text" id="lecturerDepartment" class="form-control" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="lecturerPassword">Password *</label>
+                        <input type="password" id="lecturerPassword" class="form-control" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <button type="submit" class="btn btn-primary btn-block">
+                            <i class="fas fa-save"></i> Save Lecturer
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        // Configuration
+        const API_BASE_URL = 'https://zero0-1-r0xs.onrender.com';
+        let currentUser = null;
+        let attendanceChart = null;
+
+        // DOM Ready
+        document.addEventListener('DOMContentLoaded', async function() {
+            await initializePage();
+            setupEventListeners();
+            loadAdminData();
+        });
+
+        async function initializePage() {
+            // Check authentication
+            const session = localStorage.getItem('attendance_session');
+            if (!session) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            try {
+                const sessionData = JSON.parse(session);
+                currentUser = sessionData.user;
+
+                // Check if user is admin
+                if (currentUser.role !== 'admin') {
+                    window.location.href = 'dashboard.html';
+                    return;
+                }
+
+                // Update user info
+                document.getElementById('userName').textContent = currentUser.name;
+                document.getElementById('userRole').textContent = 'Administrator';
+                
+                // Set avatar
+                const avatarText = getInitials(currentUser.name);
+                document.getElementById('userAvatar').textContent = avatarText;
+
+            } catch (error) {
+                console.error('Initialization error:', error);
+                showAlert('Failed to load admin panel', 'error');
+            }
+        }
+
+        function getInitials(name) {
+            return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+        }
+
+        function setupEventListeners() {
+            // Menu toggle
+            document.getElementById('menuToggle').addEventListener('click', () => {
+                document.getElementById('sidebar').classList.add('active');
+            });
+
+            document.getElementById('sidebarClose').addEventListener('click', () => {
+                document.getElementById('sidebar').classList.remove('active');
+            });
+
+            // Tab switching
+            document.querySelectorAll('.admin-tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    switchTab(this.dataset.tab);
+                });
+            });
+
+            // Search functionality
+            document.getElementById('studentSearch').addEventListener('input', filterStudents);
+            document.getElementById('lecturerSearch').addEventListener('input', filterLecturers);
+
+            // Form submissions
+            document.getElementById('addStudentForm').addEventListener('submit', addStudent);
+            document.getElementById('addLecturerForm').addEventListener('submit', addLecturer);
+        }
+
+        function switchTab(tabName) {
+            // Update active tab
+            document.querySelectorAll('.admin-tab').forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.tab === tabName);
+            });
+
+            // Show corresponding content
+            document.querySelectorAll('.admin-tab-content').forEach(content => {
+                content.classList.toggle('active', content.id === tabName + 'Content');
+            });
+
+            // Load data for tab if needed
+            if (tabName === 'students') {
+                loadStudents();
+            } else if (tabName === 'lecturers') {
+                loadLecturers();
+            } else if (tabName === 'qr-codes') {
+                loadQRCodes();
+            } else if (tabName === 'analytics') {
+                loadAnalytics();
+            }
+        }
+
+        async function loadAdminData() {
+            try {
+                const session = JSON.parse(localStorage.getItem('attendance_session'));
+                const token = session.token;
+
+                // Load stats
+                const response = await fetch(`${API_BASE_URL}/api/admin/dashboard`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    updateStats(data.data);
+                    loadStudents();
+                } else {
+                    throw new Error('Failed to load admin data');
+                }
+
+            } catch (error) {
+                console.error('Load admin data error:', error);
+                // Show mock data
+                showMockData();
+            }
+        }
+
+        function updateStats(data) {
+            const statsContainer = document.getElementById('adminStats');
+            
+            const statsHTML = `
+                <div class="stat-card-admin">
+                    <div class="stat-icon-admin students">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-info-admin">
+                        <h3>${data.totalStudents || 0}</h3>
+                        <p>Total Students</p>
+                    </div>
+                </div>
+                <div class="stat-card-admin">
+                    <div class="stat-icon-admin lecturers">
+                        <i class="fas fa-chalkboard-teacher"></i>
+                    </div>
+                    <div class="stat-info-admin">
+                        <h3>${data.totalLecturers || 0}</h3>
+                        <p>Total Lecturers</p>
+                    </div>
+                </div>
+                <div class="stat-card-admin">
+                    <div class="stat-icon-admin courses">
+                        <i class="fas fa-book"></i>
+                    </div>
+                    <div class="stat-info-admin">
+                        <h3>${data.totalCourses || 0}</h3>
+                        <p>Total Courses</p>
+                    </div>
+                </div>
+                <div class="stat-card-admin">
+                    <div class="stat-icon-admin attendance">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="stat-info-admin">
+                        <h3>${data.overallAttendance || 0}%</h3>
+                        <p>Overall Attendance</p>
+                    </div>
+                </div>
+            `;
+            
+            statsContainer.innerHTML = statsHTML;
+        }
+
+        function showMockData() {
+            // Mock stats
+            const statsContainer = document.getElementById('adminStats');
+            statsContainer.innerHTML = `
+                <div class="stat-card-admin">
+                    <div class="stat-icon-admin students">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-info-admin">
+                        <h3>150</h3>
+                        <p>Total Students</p>
+                    </div>
+                </div>
+                <div class="stat-card-admin">
+                    <div class="stat-icon-admin lecturers">
+                        <i class="fas fa-chalkboard-teacher"></i>
+                    </div>
+                    <div class="stat-info-admin">
+                        <h3>15</h3>
+                        <p>Total Lecturers</p>
+                    </div>
+                </div>
+                <div class="stat-card-admin">
+                    <div class="stat-icon-admin courses">
+                        <i class="fas fa-book"></i>
+                    </div>
+                    <div class="stat-info-admin">
+                        <h3>25</h3>
+                        <p>Total Courses</p>
+                    </div>
+                </div>
+                <div class="stat-card-admin">
+                    <div class="stat-icon-admin attendance">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="stat-info-admin">
+                        <h3>85%</h3>
+                        <p>Overall Attendance</p>
+                    </div>
+                </div>
+            `;
+            
+            // Mock students
+            showMockStudents();
+            showMockLecturers();
+            showMockQRCodes();
+            loadAnalytics();
+        }
+
+        async function loadStudents() {
+            try {
+                const session = JSON.parse(localStorage.getItem('attendance_session'));
+                const token = session.token;
+
+                const response = await fetch(`${API_BASE_URL}/api/admin/students`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+                updateStudentsTable(data.students || []);
+
+            } catch (error) {
+                console.error('Load students error:', error);
+                showMockStudents();
+            }
+        }
+
+        function showMockStudents() {
+            const mockStudents = [
+                {
+                    id: 'ST001',
+                    name: 'Alice Johnson',
+                    email: 'alice@student.edu',
+                    phone: '+254734567890',
+                    course: 'Computer Science',
+                    year: 2,
+                    attendancePercentage: 92
+                },
+                {
+                    id: 'ST002',
+                    name: 'Bob Williams',
+                    email: 'bob@student.edu',
+                    phone: '+254745678901',
+                    course: 'Software Engineering',
+                    year: 3,
+                    attendancePercentage: 85
+                },
+                {
+                    id: 'ST003',
+                    name: 'Carol Davis',
+                    email: 'carol@student.edu',
+                    phone: '+254756789012',
+                    course: 'Information Technology',
+                    year: 1,
+                    attendancePercentage: 78
+                },
+                {
+                    id: 'ST004',
+                    name: 'David Miller',
+                    email: 'david@student.edu',
+                    phone: '+254767890123',
+                    course: 'Computer Science',
+                    year: 4,
+                    attendancePercentage: 95
+                }
+            ];
+            
+            updateStudentsTable(mockStudents);
+        }
+
+        function updateStudentsTable(students) {
+            const tbody = document.getElementById('studentsTableBody');
+            
+            const rows = students.map(student => {
+                const avatarText = getInitials(student.name);
+                const attendanceClass = student.attendancePercentage >= 90 ? 'bg-success' : 
+                                       student.attendancePercentage >= 75 ? 'bg-warning' : 'bg-danger';
+                
+                return `
+                    <tr>
+                        <td>${student.id}</td>
+                        <td>
+                            <div style="display: flex; align-items: center;">
+                                <div class="student-avatar">${avatarText}</div>
+                                ${student.name}
+                            </div>
+                        </td>
+                        <td>${student.email}</td>
+                        <td>${student.phone}</td>
+                        <td>${student.course}</td>
+                        <td>Year ${student.year}</td>
+                        <td>
+                            <span class="badge ${attendanceClass}">
+                                ${student.attendancePercentage || 0}%
+                            </span>
+                        </td>
+                        <td>
+                            <div class="table-actions">
+                                <button class="btn btn-sm btn-outline" onclick="viewStudent('${student.id}')">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline" onclick="editStudent('${student.id}')">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteStudent('${student.id}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+            
+            tbody.innerHTML = rows || '<tr><td colspan="8" class="text-center">No students found</td></tr>';
+        }
+
+        function filterStudents() {
+            const searchTerm = document.getElementById('studentSearch').value.toLowerCase();
+            const rows = document.querySelectorAll('#studentsTableBody tr');
+            
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchTerm) ? '' : 'none';
+            });
+        }
+
+        async function loadLecturers() {
+            try {
+                const session = JSON.parse(localStorage.getItem('attendance_session'));
+                const token = session.token;
+
+                // Note: You need to create this endpoint in your backend
+                // For now, we'll use mock data
+                showMockLecturers();
+
+            } catch (error) {
+                console.error('Load lecturers error:', error);
+                showMockLecturers();
+            }
+        }
+
+        function showMockLecturers() {
+            const mockLecturers = [
+                {
+                    id: 'LT001',
+                    name: 'Dr. John Smith',
+                    email: 'john.smith@school.edu',
+                    phone: '+254723456789',
+                    department: 'Computer Science',
+                    qrCount: 12
+                },
+                {
+                    id: 'LT002',
+                    name: 'Prof. Mary Johnson',
+                    email: 'mary.johnson@school.edu',
+                    phone: '+254712345678',
+                    department: 'Mathematics',
+                    qrCount: 8
+                },
+                {
+                    id: 'LT003',
+                    name: 'Dr. Robert Williams',
+                    email: 'robert.williams@school.edu',
+                    phone: '+254734567890',
+                    department: 'Physics',
+                    qrCount: 15
+                }
+            ];
+            
+            updateLecturersTable(mockLecturers);
+        }
+
+        function updateLecturersTable(lecturers) {
+            const tbody = document.getElementById('lecturersTableBody');
+            
+            const rows = lecturers.map(lecturer => {
+                const avatarText = getInitials(lecturer.name);
+                
+                return `
+                    <tr>
+                        <td>${lecturer.id}</td>
+                        <td>
+                            <div style="display: flex; align-items: center;">
+                                <div class="student-avatar">${avatarText}</div>
+                                ${lecturer.name}
+                            </div>
+                        </td>
+                        <td>${lecturer.email}</td>
+                        <td>${lecturer.phone}</td>
+                        <td>${lecturer.department}</td>
+                        <td>${lecturer.qrCount || 0}</td>
+                        <td>
+                            <div class="table-actions">
+                                <button class="btn btn-sm btn-outline" onclick="viewLecturer('${lecturer.id}')">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline" onclick="editLecturer('${lecturer.id}')">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteLecturer('${lecturer.id}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+            
+            tbody.innerHTML = rows || '<tr><td colspan="7" class="text-center">No lecturers found</td></tr>';
+        }
+
+        function filterLecturers() {
+            const searchTerm = document.getElementById('lecturerSearch').value.toLowerCase();
+            const rows = document.querySelectorAll('#lecturersTableBody tr');
+            
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchTerm) ? '' : 'none';
+            });
+        }
+
+        async function loadQRCodes() {
+            try {
+                const session = JSON.parse(localStorage.getItem('attendance_session'));
+                const token = session.token;
+
+                // Note: You need to create this endpoint in your backend
+                // For now, we'll use mock data
+                showMockQRCodes();
+
+            } catch (error) {
+                console.error('Load QR codes error:', error);
+                showMockQRCodes();
+            }
+        }
+
+        function showMockQRCodes() {
+            const mockQRCodes = [
+                {
+                    qrCodeId: 'QR_001',
+                    unitName: 'Database Systems',
+                    unitCode: 'CS301',
+                    lecturerName: 'Dr. John Smith',
+                    createdAt: new Date(Date.now() - 86400000).toISOString(),
+                    expiresAt: new Date(Date.now() - 82800000).toISOString(),
+                    attendanceCount: 25,
+                    isActive: false
+                },
+                {
+                    qrCodeId: 'QR_002',
+                    unitName: 'Web Development',
+                    unitCode: 'CS302',
+                    lecturerName: 'Dr. John Smith',
+                    createdAt: new Date(Date.now() - 172800000).toISOString(),
+                    expiresAt: new Date(Date.now() - 169200000).toISOString(),
+                    attendanceCount: 18,
+                    isActive: false
+                },
+                {
+                    qrCodeId: 'QR_003',
+                    unitName: 'Mathematics',
+                    unitCode: 'MATH101',
+                    lecturerName: 'Prof. Mary Johnson',
+                    createdAt: new Date(Date.now() - 3600000).toISOString(),
+                    expiresAt: new Date(Date.now() + 1740000).toISOString(),
+                    attendanceCount: 30,
+                    isActive: true
+                }
+            ];
+            
+            updateQRCodesTable(mockQRCodes);
+        }
+
+        function updateQRCodesTable(qrCodes) {
+            const tbody = document.getElementById('qrCodesTableBody');
+            
+            const rows = qrCodes.map(qr => {
+                const isActive = new Date(qr.expiresAt) > new Date();
+                const statusClass = isActive ? 'status-active' : 'status-expired';
+                const statusText = isActive ? 'Active' : 'Expired';
+                
+                return `
+                    <tr>
+                        <td>${qr.qrCodeId}</td>
+                        <td>${qr.unitName} (${qr.unitCode})</td>
+                        <td>${qr.lecturerName}</td>
+                        <td>${new Date(qr.createdAt).toLocaleDateString()}</td>
+                        <td>${new Date(qr.expiresAt).toLocaleDateString()}</td>
+                        <td>${qr.attendanceCount || 0}</td>
+                        <td>
+                            <span class="${statusClass}">${statusText}</span>
+                        </td>
+                        <td>
+                            <div class="table-actions">
+                                <button class="btn btn-sm btn-outline" onclick="viewQRCodeDetails('${qr.qrCodeId}')">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline" onclick="exportQRCode('${qr.qrCodeId}')">
+                                    <i class="fas fa-download"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+            
+            tbody.innerHTML = rows || '<tr><td colspan="8" class="text-center">No QR codes found</td></tr>';
+        }
+
+        function loadAnalytics() {
+            // Update system stats
+            const systemStats = document.getElementById('systemStats');
+            systemStats.innerHTML = `
+                <div style="margin-bottom: 1rem;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span>System Uptime</span>
+                        <span class="badge bg-success">100%</span>
+                    </div>
+                    <div class="progress" style="height: 6px;">
+                        <div class="progress-bar bg-success" style="width: 100%"></div>
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 1rem;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span>Database Status</span>
+                        <span class="badge bg-success">Connected</span>
+                    </div>
+                    <div class="progress" style="height: 6px;">
+                        <div class="progress-bar bg-success" style="width: 100%"></div>
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 1rem;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span>Storage Usage</span>
+                        <span class="badge bg-warning">65%</span>
+                    </div>
+                    <div class="progress" style="height: 6px;">
+                        <div class="progress-bar bg-warning" style="width: 65%"></div>
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 1rem;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span>Active Sessions</span>
+                        <span class="badge bg-info">42</span>
+                    </div>
+                    <div class="progress" style="height: 6px;">
+                        <div class="progress-bar bg-info" style="width: 42%"></div>
+                    </div>
+                </div>
+            `;
+            
+            // Create attendance chart
+            createAttendanceChart();
+        }
+
+        function createAttendanceChart() {
+            const ctx = document.getElementById('attendanceChart').getContext('2d');
+            
+            if (attendanceChart) {
+                attendanceChart.destroy();
+            }
+            
+            attendanceChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+                    datasets: [{
+                        label: 'Attendance Rate',
+                        data: [82, 85, 88, 90, 87, 0],
+                        borderColor: '#4361ee',
+                        backgroundColor: 'rgba(67, 97, 238, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Modal Functions
+        function openAddStudentModal() {
+            document.getElementById('addStudentModal').classList.add('active');
+        }
+
+        function closeAddStudentModal() {
+            document.getElementById('addStudentModal').classList.remove('active');
+            document.getElementById('addStudentForm').reset();
+        }
+
+        function openAddLecturerModal() {
+            document.getElementById('addLecturerModal').classList.add('active');
+        }
+
+        function closeAddLecturerModal() {
+            document.getElementById('addLecturerModal').classList.remove('active');
+            document.getElementById('addLecturerForm').reset();
+        }
+
+        async function addStudent(e) {
+            e.preventDefault();
+            
+            const studentData = {
+                id: document.getElementById('studentId').value,
+                name: document.getElementById('studentName').value,
+                email: document.getElementById('studentEmail').value,
+                phone: document.getElementById('studentPhone').value,
+                course: document.getElementById('studentCourse').value,
+                year: parseInt(document.getElementById('studentYear').value),
+                password: document.getElementById('studentPassword').value,
+                role: 'student'
+            };
+            
+            // Validate
+            if (!studentData.id || !studentData.name || !studentData.email || !studentData.password) {
+                showAlert('Please fill in all required fields', 'error');
+                return;
+            }
+            
+            try {
+                const session = JSON.parse(localStorage.getItem('attendance_session'));
+                const token = session.token;
+
+                const response = await fetch(`${API_BASE_URL}/api/admin/users`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(studentData)
+                });
+
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    showAlert('Student added successfully', 'success');
+                    closeAddStudentModal();
+                    loadStudents();
+                } else {
+                    throw new Error(data.message || 'Failed to add student');
+                }
+                
+            } catch (error) {
+                console.error('Add student error:', error);
+                showAlert(error.message, 'error');
+            }
+        }
+
+        async function addLecturer(e) {
+            e.preventDefault();
+            
+            const lecturerData = {
+                id: document.getElementById('lecturerId').value,
+                name: document.getElementById('lecturerName').value,
+                email: document.getElementById('lecturerEmail').value,
+                phone: document.getElementById('lecturerPhone').value,
+                department: document.getElementById('lecturerDepartment').value,
+                password: document.getElementById('lecturerPassword').value,
+                role: 'lecturer'
+            };
+            
+            // Validate
+            if (!lecturerData.id || !lecturerData.name || !lecturerData.email || !lecturerData.password) {
+                showAlert('Please fill in all required fields', 'error');
+                return;
+            }
+            
+            try {
+                const session = JSON.parse(localStorage.getItem('attendance_session'));
+                const token = session.token;
+
+                const response = await fetch(`${API_BASE_URL}/api/admin/users`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(lecturerData)
+                });
+
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    showAlert('Lecturer added successfully', 'success');
+                    closeAddLecturerModal();
+                    loadLecturers();
+                } else {
+                    throw new Error(data.message || 'Failed to add lecturer');
+                }
+                
+            } catch (error) {
+                console.error('Add lecturer error:', error);
+                showAlert(error.message, 'error');
+            }
+        }
+
+        // Action Functions
+        function viewStudent(studentId) {
+            alert(`View student: ${studentId}\n\nThis would show detailed student information.`);
+        }
+
+        function editStudent(studentId) {
+            alert(`Edit student: ${studentId}\n\nThis would open edit form.`);
+        }
+
+        function deleteStudent(studentId) {
+            if (confirm(`Are you sure you want to delete student ${studentId}?`)) {
+                showAlert(`Student ${studentId} deleted (mock action)`, 'success');
+                // In real implementation, call API to delete
+            }
+        }
+
+        function viewLecturer(lecturerId) {
+            alert(`View lecturer: ${lecturerId}\n\nThis would show detailed lecturer information.`);
+        }
+
+        function editLecturer(lecturerId) {
+            alert(`Edit lecturer: ${lecturerId}\n\nThis would open edit form.`);
+        }
+
+        function deleteLecturer(lecturerId) {
+            if (confirm(`Are you sure you want to delete lecturer ${lecturerId}?`)) {
+                showAlert(`Lecturer ${lecturerId} deleted (mock action)`, 'success');
+            }
+        }
+
+        function viewQRCodeDetails(qrCodeId) {
+            alert(`View QR code details: ${qrCodeId}\n\nThis would show attendance details.`);
+        }
+
+        function exportQRCode(qrCodeId) {
+            showAlert(`Exporting QR code: ${qrCodeId}`, 'info');
+        }
+
+        function exportStudents() {
+            showAlert('Exporting student data...', 'info');
+        }
+
+        function exportActiveQRCodes() {
+            showAlert('Exporting active QR codes...', 'info');
+        }
+
+        function exportAllQRCodes() {
+            showAlert('Exporting all QR codes...', 'info');
+        }
+
+        function exportQRAttendance() {
+            showAlert('Exporting QR attendance data...', 'info');
+        }
+
+        function generateReport() {
+            showAlert('Generating system report...', 'info');
+        }
+
+        function refreshAllData() {
+            showAlert('Refreshing all data...', 'info');
+            loadAdminData();
+        }
+
+        function showAlert(message, type = 'info') {
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 9999;
+                padding: 1rem 1.25rem;
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                max-width: 400px;
+                animation: slideIn 0.3s ease-out;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            `;
+            
+            // Set colors
+            let bgColor, textColor, borderColor;
+            switch(type) {
+                case 'success': 
+                    bgColor = '#dcfce7'; textColor = '#166534'; borderColor = '#bbf7d0'; break;
+                case 'error': 
+                    bgColor = '#fee2e2'; textColor = '#991b1b'; borderColor = '#fecaca'; break;
+                case 'warning': 
+                    bgColor = '#fef3c7'; textColor = '#92400e'; borderColor = '#fde68a'; break;
+                default: 
+                    bgColor = '#dbeafe'; textColor = '#1e40af'; borderColor = '#bfdbfe';
+            }
+            
+            alert.style.backgroundColor = bgColor;
+            alert.style.color = textColor;
+            alert.style.border = `1px solid ${borderColor}`;
+            
+            let icon = 'info-circle';
+            if (type === 'success') icon = 'check-circle';
+            if (type === 'error') icon = 'exclamation-circle';
+            if (type === 'warning') icon = 'exclamation-triangle';
+            
+            alert.innerHTML = `
+                <i class="fas fa-${icon}"></i>
+                <span>${message}</span>
+                <button onclick="this.parentElement.remove()" style="
+                    background: none;
+                    border: none;
+                    color: inherit;
+                    margin-left: 15px;
+                    cursor: pointer;
+                ">×</button>
+            `;
+            
+            document.body.appendChild(alert);
+            
+            setTimeout(() => {
+                if (alert.parentNode) alert.remove();
+            }, 5000);
+        }
+
+        // Global functions
+        window.changePassword = function() {
+            showAlert('Change password feature coming soon', 'info');
+        };
+
+        window.logout = function() {
+            if (confirm('Are you sure you want to logout?')) {
+                localStorage.removeItem('attendance_session');
+                window.location.href = 'login.html';
+            }
+        };
+    </script>
+</body>
+</html>
