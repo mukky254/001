@@ -1,128 +1,72 @@
-// Admin Panel JavaScript
+// scripts/admin.js - ADMIN PANEL
 const API_BASE_URL = 'https://zero0-1-r0xs.onrender.com';
 
 document.addEventListener('DOMContentLoaded', async function() {
-    console.log('👑 Admin panel loaded');
-    
+    await initializeAdminPanel();
+    setupAdminEvents();
+});
+
+async function initializeAdminPanel() {
     // Check authentication
-    const session = localStorage.getItem('attendance_session');
-    if (!session) {
+    const sessionData = localStorage.getItem('attendance_session');
+    if (!sessionData) {
         window.location.href = 'login.html';
         return;
     }
 
-    try {
-        const sessionData = JSON.parse(session);
-        const user = sessionData.user;
-        
-        if (user.role !== 'admin') {
-            window.location.href = 'dashboard.html';
-            return;
-        }
-
-        // Update user info
-        document.getElementById('userName').textContent = user.name || 'Admin';
-        document.getElementById('userRole').textContent = 'Administrator';
-        
-        // Set avatar
-        const avatarText = getInitials(user.name || 'A');
-        document.getElementById('userAvatar').textContent = avatarText;
-        document.getElementById('miniAvatar').textContent = avatarText;
-
-        // Load admin data
-        await loadAdminData(sessionData.token);
-        
-        // Setup event listeners
-        setupAdminEvents();
-        
-    } catch (error) {
-        console.error('Error initializing admin panel:', error);
-        showAlert('Failed to load admin panel. Using demo data.', 'warning');
-        useMockAdminData();
+    const session = JSON.parse(sessionData);
+    const { user, token } = session;
+    
+    if (!user || user.role !== 'admin') {
+        window.location.href = 'dashboard.html';
+        return;
     }
-});
+
+    // Set user info
+    document.getElementById('userName').textContent = user.name;
+    document.getElementById('userRole').textContent = 'Administrator';
+    
+    // Set avatar
+    const avatarText = getInitials(user.name);
+    document.getElementById('userAvatar').textContent = avatarText;
+    document.getElementById('miniAvatar').textContent = avatarText;
+
+    // Load admin data
+    await loadAdminData(token);
+}
 
 function getInitials(name) {
-    if (!name) return 'A';
     return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
 }
 
 async function loadAdminData(token) {
     try {
         // Load dashboard data
-        const dashboardRes = await fetch(`${API_BASE_URL}/api/admin/dashboard`, {
+        const response = await fetch(`${API_BASE_URL}/api/admin/dashboard`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
 
-        if (dashboardRes.ok) {
-            const dashboardData = await dashboardRes.json();
-            updateAdminDashboard(dashboardData.data);
+        if (!response.ok) {
+            throw new Error('Failed to load admin data');
         }
 
+        const data = await response.json();
+        updateAdminDashboard(data.data);
+        
         // Load students
-        const studentsRes = await fetch(`${API_BASE_URL}/api/admin/students`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-
-        if (studentsRes.ok) {
-            const studentsData = await studentsRes.json();
-            updateStudentsTable(studentsData.students || []);
-        }
-
+        await loadStudents(token);
+        
         // Load QR codes
-        const qrCodesRes = await fetch(`${API_BASE_URL}/api/admin/qr-codes`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-
-        if (qrCodesRes.ok) {
-            const qrCodesData = await qrCodesRes.json();
-            updateQRCodesTable(qrCodesData.qrCodes || []);
-        }
-
+        await loadQRCodes(token);
+        
     } catch (error) {
         console.error('Error loading admin data:', error);
-        throw error;
+        showAlert('Failed to load admin data. Please try again.', 'error');
     }
 }
 
-function useMockAdminData() {
-    // Mock dashboard data
-    const mockDashboard = {
-        data: {
-            totalStudents: 150,
-            totalLecturers: 15,
-            totalCourses: 25,
-            overallAttendance: 85,
-            todayRecords: 45,
-            weekRecords: 320,
-            monthRecords: 1250,
-            recentActivity: [
-                { timestamp: '10:30 AM', userName: 'Alice Johnson', action: 'Scanned QR', details: 'Database Systems (CS301)' },
-                { timestamp: '10:15 AM', userName: 'Dr. Smith', action: 'Generated QR', details: 'Web Development - 60min' },
-                { timestamp: '09:45 AM', userName: 'Bob Williams', action: 'Scanned QR', details: 'Mathematics (MATH101)' }
-            ]
-        }
-    };
-
-    // Mock students data
-    const mockStudents = [
-        { id: 'ST001', name: 'Alice Johnson', email: 'alice@student.edu', phone: '+254712345678', course: 'Computer Science', year: 2, attendanceCount: 45, attendancePercentage: 90 },
-        { id: 'ST002', name: 'Bob Williams', email: 'bob@student.edu', phone: '+254723456789', course: 'Software Engineering', year: 3, attendanceCount: 40, attendancePercentage: 80 },
-        { id: 'ST003', name: 'Carol Davis', email: 'carol@student.edu', phone: '+254734567890', course: 'Information Technology', year: 1, attendanceCount: 35, attendancePercentage: 70 }
-    ];
-
-    // Mock QR codes data
-    const mockQRCodes = [
-        { qrCodeId: 'QR001', unitName: 'Database Systems', unitCode: 'CS301', lecturerName: 'Dr. Smith', createdAt: new Date(), expiresAt: new Date(Date.now() + 3600000), attendanceCount: 25 },
-        { qrCodeId: 'QR002', unitName: 'Web Development', unitCode: 'CS302', lecturerName: 'Dr. Johnson', createdAt: new Date(Date.now() - 86400000), expiresAt: new Date(Date.now() - 43200000), attendanceCount: 30 }
-    ];
-
-    updateAdminDashboard(mockDashboard.data);
-    updateStudentsTable(mockStudents);
-    updateQRCodesTable(mockQRCodes);
-}
-
 function updateAdminDashboard(data) {
+    // Update stats
     const statsRow = document.getElementById('statsRow');
     if (statsRow) {
         statsRow.innerHTML = `
@@ -166,6 +110,21 @@ function updateAdminDashboard(data) {
     }
 }
 
+async function loadStudents(token) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/admin/students`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            updateStudentsTable(data.students || []);
+        }
+    } catch (error) {
+        console.error('Error loading students:', error);
+    }
+}
+
 function updateStudentsTable(students) {
     const tableBody = document.getElementById('studentsTableBody');
     if (!tableBody) return;
@@ -173,7 +132,7 @@ function updateStudentsTable(students) {
     if (!students.length) {
         tableBody.innerHTML = `
             <tr>
-                <td colspan="7" class="text-center">No students found</td>
+                <td colspan="8" class="text-center">No students found</td>
             </tr>
         `;
         return;
@@ -182,28 +141,25 @@ function updateStudentsTable(students) {
     const tableHTML = students.map(student => `
         <tr>
             <td>${student.id || '-'}</td>
-            <td>
-                <div class="student-avatar">${getInitials(student.name)}</div>
-                ${student.name || '-'}
-            </td>
+            <td>${student.name || '-'}</td>
             <td>${student.email || '-'}</td>
             <td>${student.phone || '-'}</td>
             <td>${student.course || '-'}</td>
             <td>Year ${student.year || '-'}</td>
             <td>
-                <span class="badge ${(student.attendancePercentage || 0) >= 75 ? 'bg-success' : 'bg-warning'}">
+                <span class="badge ${student.attendancePercentage >= 75 ? 'bg-success' : 'bg-warning'}">
                     ${student.attendancePercentage || 0}%
                 </span>
             </td>
             <td>
                 <div class="table-actions">
-                    <button class="btn btn-sm btn-outline" onclick="viewStudentDetails('${student.id || ''}')">
+                    <button class="btn btn-sm btn-outline" onclick="viewStudentDetails('${student.id}')">
                         <i class="fas fa-eye"></i>
                     </button>
-                    <button class="btn btn-sm btn-outline" onclick="editStudent('${student.id || ''}')">
+                    <button class="btn btn-sm btn-outline" onclick="editStudent('${student.id}')">
                         <i class="fas fa-edit"></i>
                     </button>
-                    <button class="btn btn-sm btn-danger" onclick="deleteStudent('${student.id || ''}')">
+                    <button class="btn btn-sm btn-danger" onclick="deleteStudent('${student.id}')">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
@@ -212,6 +168,21 @@ function updateStudentsTable(students) {
     `).join('');
 
     tableBody.innerHTML = tableHTML;
+}
+
+async function loadQRCodes(token) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/admin/qr-codes`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            updateQRCodesTable(data.qrCodes || []);
+        }
+    } catch (error) {
+        console.error('Error loading QR codes:', error);
+    }
 }
 
 function updateQRCodesTable(qrCodes) {
@@ -232,8 +203,7 @@ function updateQRCodesTable(qrCodes) {
         return `
             <tr>
                 <td>${qr.qrCodeId || '-'}</td>
-                <td>${qr.unitName || '-'}</td>
-                <td>${qr.unitCode || '-'}</td>
+                <td>${qr.unitName || '-'} (${qr.unitCode || '-'})</td>
                 <td>${qr.lecturerName || '-'}</td>
                 <td>${new Date(qr.createdAt).toLocaleDateString()}</td>
                 <td>${new Date(qr.expiresAt).toLocaleDateString()}</td>
@@ -245,10 +215,10 @@ function updateQRCodesTable(qrCodes) {
                 </td>
                 <td>
                     <div class="table-actions">
-                        <button class="btn btn-sm btn-outline" onclick="viewQRCode('${qr.qrCodeId || ''}')">
+                        <button class="btn btn-sm btn-outline" onclick="viewQRCode('${qr.qrCodeId}')">
                             <i class="fas fa-eye"></i>
                         </button>
-                        <button class="btn btn-sm btn-danger" onclick="deleteQRCode('${qr.qrCodeId || ''}')" ${!isActive ? 'disabled' : ''}>
+                        <button class="btn btn-sm btn-danger" onclick="deleteQRCode('${qr.qrCodeId}')" ${!isActive ? 'disabled' : ''}>
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
@@ -261,25 +231,33 @@ function updateQRCodesTable(qrCodes) {
 }
 
 function setupAdminEvents() {
-    // Tabs
-    const tabButtons = document.querySelectorAll('.admin-tab');
-    tabButtons.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const tabId = btn.dataset.tab;
+    // Tab switching
+    document.querySelectorAll('.admin-tab').forEach(tab => {
+        tab.addEventListener('click', function() {
+            const tabId = this.dataset.tab;
             switchAdminTab(tabId);
         });
     });
 
-    // Refresh data
-    const refreshDataBtn = document.getElementById('refreshDataBtn');
-    if (refreshDataBtn) {
-        refreshDataBtn.addEventListener('click', refreshAdminData);
+    // Add student button
+    const addStudentBtn = document.getElementById('addStudentBtn');
+    if (addStudentBtn) {
+        addStudentBtn.addEventListener('click', () => {
+            document.getElementById('addStudentModal').style.display = 'block';
+            document.getElementById('addStudentModal').classList.add('active');
+        });
     }
 
-    // Generate reports
+    // Generate report button
     const generateReportBtn = document.getElementById('generateReportBtn');
     if (generateReportBtn) {
         generateReportBtn.addEventListener('click', generateReport);
+    }
+
+    // Refresh button
+    const refreshDataBtn = document.getElementById('refreshDataBtn');
+    if (refreshDataBtn) {
+        refreshDataBtn.addEventListener('click', refreshAdminData);
     }
 }
 
@@ -295,78 +273,152 @@ function switchAdminTab(tabId) {
     });
 }
 
-async function refreshAdminData() {
+function closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    modal.style.display = 'none';
+    modal.classList.remove('active');
+}
+
+async function addStudent() {
     const session = JSON.parse(localStorage.getItem('attendance_session'));
     if (!session) return;
 
-    const refreshBtn = document.getElementById('refreshDataBtn');
-    const originalHTML = refreshBtn.innerHTML;
-    
-    refreshBtn.disabled = true;
-    refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
+    const studentData = {
+        role: 'student',
+        id: document.getElementById('newStudentId').value,
+        name: document.getElementById('newStudentName').value,
+        email: document.getElementById('newStudentEmail').value,
+        phone: document.getElementById('newStudentPhone').value,
+        course: document.getElementById('newStudentCourse').value,
+        year: document.getElementById('newStudentYear').value,
+        password: document.getElementById('newStudentPassword').value
+    };
+
+    // Validation
+    for (const key in studentData) {
+        if (!studentData[key]) {
+            showAlert('Please fill in all fields', 'error');
+            return;
+        }
+    }
 
     try {
-        await loadAdminData(session.token);
-        showAlert('✅ Data refreshed successfully', 'success');
+        const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(studentData)
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+            showAlert('✅ Student added successfully', 'success');
+            closeModal('addStudentModal');
+            
+            // Refresh students list
+            await loadStudents(session.token);
+            
+            // Clear form
+            document.getElementById('addStudentForm').reset();
+        } else {
+            throw new Error(data.message || 'Failed to add student');
+        }
     } catch (error) {
-        showAlert('❌ Failed to refresh data', 'error');
-    } finally {
-        refreshBtn.disabled = false;
-        refreshBtn.innerHTML = originalHTML;
+        showAlert('❌ ' + error.message, 'error');
     }
 }
 
 async function generateReport() {
-    showAlert('📊 Generating report...', 'info');
-    
-    // Simulate report generation
-    setTimeout(() => {
-        showAlert('✅ Report generated successfully!', 'success');
-        
-        // Create a simple CSV download
-        const csvData = [
-            ['Student ID', 'Name', 'Email', 'Course', 'Attendance %'],
-            ['ST001', 'Alice Johnson', 'alice@student.edu', 'Computer Science', '90%'],
-            ['ST002', 'Bob Williams', 'bob@student.edu', 'Software Engineering', '80%'],
-            ['ST003', 'Carol Davis', 'carol@student.edu', 'Information Technology', '70%']
-        ].map(row => row.join(',')).join('\n');
-        
-        const blob = new Blob([csvData], { type: 'text/csv' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'attendance_report.csv';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    }, 2000);
+    const session = JSON.parse(localStorage.getItem('attendance_session'));
+    if (!session) return;
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/admin/generate-report`, {
+            headers: { 'Authorization': `Bearer ${session.token}` }
+        });
+
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'attendance_report.csv';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            
+            showAlert('✅ Report generated and downloaded', 'success');
+        } else {
+            throw new Error('Failed to generate report');
+        }
+    } catch (error) {
+        showAlert('❌ ' + error.message, 'error');
+    }
 }
 
 function viewStudentDetails(studentId) {
-    showAlert(`Viewing student details for ID: ${studentId}`, 'info');
-    
-    // In a real app, this would fetch student details
-    // For demo, show a modal with sample data
-    const modal = document.getElementById('studentDetailsModal');
-    const modalBody = document.getElementById('studentDetailsBody');
-    
-    if (modal && modalBody) {
-        modalBody.innerHTML = `
-            <div class="student-profile">
-                <div class="profile-header">
-                    <div class="profile-avatar">${getInitials('Test Student')}</div>
-                    <h4>Test Student</h4>
-                    <p>${studentId} • Computer Science Year 2</p>
-                </div>
-                
-                <div class="profile-stats">
-                    <div class="stat">
-                        <span class="stat-label">Attendance Rate</span>
-                        <span class="stat-value">85%</span>
-                    </div>
-                    <div class="stat">
-                        <span class="stat-label">Classes Attended</span>
-                        <span class="stat-value">42/50</span>
-                    </div>
-               
+    showAlert(`Viewing details for student: ${studentId}`, 'info');
+}
+
+function editStudent(studentId) {
+    showAlert(`Editing student: ${studentId}`, 'info');
+}
+
+async function deleteStudent(studentId) {
+    if (!confirm(`Are you sure you want to delete student ${studentId}?`)) return;
+
+    const session = JSON.parse(localStorage.getItem('attendance_session'));
+    if (!session) return;
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/admin/users/${studentId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${session.token}`
+            }
+        });
+
+        if (response.ok) {
+            showAlert('✅ Student deleted successfully', 'success');
+            await loadStudents(session.token);
+        } else {
+            throw new Error('Failed to delete student');
+        }
+    } catch (error) {
+        showAlert('❌ ' + error.message, 'error');
+    }
+}
+
+function viewQRCode(qrCodeId) {
+    showAlert(`Viewing QR Code: ${qrCodeId}`, 'info');
+}
+
+async function deleteQRCode(qrCodeId) {
+    if (!confirm(`Are you sure you want to delete QR code ${qrCodeId}?`)) return;
+
+    showAlert('QR code deletion would be implemented here', 'info');
+}
+
+async function refreshAdminData() {
+    const session = JSON.parse(localStorage.getItem('attendance_session'));
+    if (!session) return;
+
+    showAlert('Refreshing data...', 'info');
+    await loadAdminData(session.token);
+}
+
+// Make functions available globally
+window.viewStudentDetails = viewStudentDetails;
+window.editStudent = editStudent;
+window.deleteStudent = deleteStudent;
+window.viewQRCode = viewQRCode;
+window.deleteQRCode = deleteQRCode;
+window.addStudent = addStudent;
+window.generateReport = generateReport;
+window.refreshAdminData = refreshAdminData;
+window.logout = function() {
+    localStorage.removeItem('attendance_session');
+    window.location.href = 'index.html';
+};
