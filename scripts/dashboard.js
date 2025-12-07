@@ -1,3 +1,10 @@
+const API_BASE_URL = 'https://zero0-1-r0xs.onrender.com';
+
+// Add this function to get token from session
+function getCurrentSession() {
+    const sessionData = localStorage.getItem('attendance_session');
+    return sessionData ? JSON.parse(sessionData) : null;
+}
 // Dashboard JavaScript
 document.addEventListener('DOMContentLoaded', async function() {
     await initializeDashboard();
