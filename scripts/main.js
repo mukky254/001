@@ -1,6 +1,5 @@
 // Main JavaScript - SIMPLIFIED
-const API_BASE_URL = 'https://your-backend.onrender.com'; // ← CHANGE THIS
-
+const API_BASE_URL = 'https://zero0-1-r0xs.onrender.com';
 document.addEventListener('DOMContentLoaded', function() {
     // Test backend connection
     testBackendConnection();
