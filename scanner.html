@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scan QR Code - IN Attendance System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles/dashboard.css">
+    <style>
+        /* Scanner specific styles */
+        .scanner-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2rem;
+            margin-top: 1rem;
+        }
+        
+        .scanner-view {
+            width: 100%;
+            max-width: 500px;
+            height: 400px;
+            background: #1a1a1a;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .scanner-placeholder {
+            text-align: center;
+            color: white;
+            padding: 2rem;
+        }
+        
+        .scanner-placeholder i {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.7;
+        }
+        
+        .scanner-placeholder p {
+            margin-bottom: 0.5rem;
+            opacity: 0.9;
+        }
+        
+        .scanner-frame {
+            position: absolute;
+            width: 70%;
+            height: 70%;
+            border: 3px solid #4361ee;
+            border-radius: 12px;
+            box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.7);
+        }
+        
+        #scannerVideo {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .scanner-controls {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+        
+        .scan-result {
+            width: 100%;
+            max-width: 500px;
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: none;
+        }
+        
+        .scan-result.active {
+            display: block;
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        .scan-status {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .scan-status i {
+            font-size: 2rem;
+        }
+        
+        .scan-status.success i {
+            color: #166534;
+        }
+        
+        .scan-status.error i {
+            color: #991b1b;
+        }
+        
+        .scan-status.scanning i {
+            color: #4361ee;
+        }
+        
+        .scan-details {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .scan-details p {
+            margin: 0.5rem 0;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .scan-details span:first-child {
+            font-weight: 500;
+            color: #64748b;
+        }
+        
+        .scan-details span:last-child {
+            font-weight: 600;
+            color: #334155;
+        }
+        
+        .manual-entry {
+            margin-top: 2rem;
+            width: 100%;
+            max-width: 500px;
+        }
+        
+        .manual-entry-form {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .recent-scans {
+            margin-top: 2rem;
+            width: 100%;
+        }
+        
+        .test-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 1rem;
+        }
+        
+        @media (max-width: 768px) {
+            .scanner-view {
+                height: 300px;
+            }
+            
+            .scanner-controls {
+                flex-direction: column;
+                width: 100%;
+            }
+            
+            .scanner-controls button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-brand">
+                <i class="fas fa-graduation-cap"></i>
+                <span>IN Attendance</span>
+            </div>
+            <button class="sidebar-close" id="sidebarClose">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="sidebar-user">
+            <div class="user-avatar" id="userAvatar">
+                <span>ST</span>
+            </div>
+            <div class="user-info">
+                <h4 id="userName">Loading...</h4>
+                <span class="user-role" id="userRole">Student</span>
+            </div>
+        </div>
+
+        <nav class="sidebar-menu">
+            <div class="menu-section">
+                <div class="menu-title">MAIN</div>
+                <a href="dashboard.html" class="menu-item">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="profile.html" class="menu-item">
+                    <i class="fas fa-user"></i>
+                    <span>My Profile</span>
+                </a>
+            </div>
+
+            <div class="menu-section">
+                <div class="menu-title">STUDENT</div>
+                <a href="scanner.html" class="menu-item active">
+                    <i class="fas fa-qrcode"></i>
+                    <span>Scan QR Code</span>
+                </a>
+                <a href="#" class="menu-item" onclick="viewAttendanceHistory()">
+                    <i class="fas fa-history"></i>
+                    <span>Attendance History</span>
+                </a>
+                <a href="#" class="menu-item" onclick="viewCourses()">
+                    <i class="fas fa-book"></i>
+                    <span>My Courses</span>
+                </a>
+            </div>
+
+            <div class="menu-section">
+                <div class="menu-title">ACCOUNT</div>
+                <a href="#" class="menu-item" onclick="changePassword()">
+                    <i class="fas fa-key"></i>
+                    <span>Change Password</span>
+                </a>
+                <a href="#" class="menu-item" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <button class="menu-toggle" id="menuToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="page-title">
+                    <h1>Scan QR Code</h1>
+                    <small>Scan your lecturer's QR code to mark attendance</small>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="header-actions">
+                    <button class="header-btn" onclick="window.location.href='dashboard.html'">
+                        <i class="fas fa-tachometer-alt"></i> Dashboard
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Content Area -->
+        <div class="content-area">
+            <div class="container-fluid">
+                <div class="scanner-container">
+                    <!-- Scanner View -->
+                    <div class="scanner-view" id="scannerView">
+                        <div class="scanner-placeholder">
+                            <i class="fas fa-qrcode"></i>
+                            <p>Ready to scan</p>
+                            <p class="small">Press "Start Scanner" to begin</p>
+                        </div>
+                    </div>
+
+                    <!-- Scanner Controls -->
+                    <div class="scanner-controls">
+                        <button class="btn btn-primary btn-lg" id="startScannerBtn">
+                            <i class="fas fa-play"></i> Start Scanner
+                        </button>
+                        <button class="btn btn-danger btn-lg" id="stopScannerBtn" style="display: none;">
+                            <i class="fas fa-stop"></i> Stop Scanner
+                        </button>
+                        <button class="btn btn-outline btn-lg" id="manualEntryBtn">
+                            <i class="fas fa-keyboard"></i> Manual Entry
+                        </button>
+                        <button class="btn btn-warning btn-lg" id="testScanBtn">
+                            <i class="fas fa-vial"></i> Test Scan
+                        </button>
+                    </div>
+
+                    <!-- Test Buttons -->
+                    <div class="test-buttons">
+                        <button class="btn btn-sm btn-outline" onclick="simulateLectureScan()">
+                            Lecture QR
+                        </button>
+                        <button class="btn btn-sm btn-outline" onclick="simulateLabScan()">
+                            Lab QR
+                        </button>
+                        <button class="btn btn-sm btn-outline" onclick="simulateTutorialScan()">
+                            Tutorial QR
+                        </button>
+                    </div>
+
+                    <!-- Scan Result -->
+                    <div class="scan-result" id="scanResult"></div>
+
+                    <!-- Manual Entry Form -->
+                    <div class="manual-entry">
+                        <div class="manual-entry-form">
+                            <h3>Manual QR Entry</h3>
+                            <p class="text-muted">Enter QR code data if scanner fails</p>
+                            <div class="form-group">
+                                <label for="manualQRCode">QR Code Data</label>
+                                <textarea id="manualQRCode" class="form-control" rows="3" 
+                                          placeholder='Paste QR code data in JSON format: {"qrCodeId":"QR_001","unitCode":"CS301",...}'></textarea>
+                            </div>
+                            <button class="btn btn-primary btn-block" onclick="submitManualEntry()">
+                                <i class="fas fa-check"></i> Submit Attendance
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Recent Scans -->
+                    <div class="recent-scans">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">Recent Scans</h3>
+                                <button class="btn btn-sm btn-outline" onclick="refreshScans()">
+                                    <i class="fas fa-sync"></i> Refresh
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table">
+                                        <thead>
+                                            <tr>
+                                                <th>Date</th>
+                                                <th>Time</th>
+                                                <th>Unit</th>
+                                                <th>Code</th>
+                                                <th>Lecturer</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="recentScansBody">
+                                            <tr>
+                                                <td colspan="6" class="text-center">No scans recorded yet</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const API_BASE_URL = 'https://zero0-1-r0xs.onrender.com';
+        let currentUser = null;
+        let videoStream = null;
+        let isScanning = false;
+
+        // DOM Ready
+        document.addEventListener('DOMContentLoaded', async function() {
+            await initializePage();
+            setupEventListeners();
+            loadRecentScans();
+        });
+
+        async function initializePage() {
+            // Check authentication
+            const session = localStorage.getItem('attendance_session');
+            if (!session) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            try {
+                const sessionData = JSON.parse(session);
+                currentUser = sessionData.user;
+
+                // Check if user is student
+                if (currentUser.role !== 'student') {
+                    window.location.href = 'dashboard.html';
+                    return;
+                }
+
+                // Update user info
+                document.getElementById('userName').textContent = currentUser.name;
+                document.getElementById('userRole').textContent = 'Student';
+                
+                // Set avatar
+                const avatarText = getInitials(currentUser.name);
+                document.getElementById('userAvatar').textContent = avatarText;
+
+            } catch (error) {
+                console.error('Initialization error:', error);
+                showAlert('Failed to load scanner', 'error');
+            }
+        }
+
+        function getInitials(name) {
+            return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+        }
+
+        function setupEventListeners() {
+            // Menu toggle
+            document.getElementById('menuToggle').addEventListener('click', () => {
+                document.getElementById('sidebar').classList.add('active');
+            });
+
+            document.getElementById('sidebarClose').addEventListener('click', () => {
+                document.getElementById('sidebar').classList.remove('active');
+            });
+
+            // Scanner controls
+            document.getElementById('startScannerBtn').addEventListener('click', startScanner);
+            document.getElementById('stopScannerBtn').addEventListener('click', stopScanner);
+            document.getElementById('manualEntryBtn').addEventListener('click', openManualEntry);
+            document.getElementById('testScanBtn').addEventListener('click', simulateTestScan);
+        }
+
+        async function startScanner() {
+            const scannerView = document.getElementById('scannerView');
+            const startBtn = document.getElementById('startScannerBtn');
+            const stopBtn = document.getElementById('stopScannerBtn');
+
+            try {
+                // Request camera access
+                videoStream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: 'environment',
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    }
+                });
+
+                // Create video element
+                const video = document.createElement('video');
+                video.id = 'scannerVideo';
+                video.srcObject = videoStream;
+                video.setAttribute('playsinline', 'true');
+                video.style.width = '100%';
+                video.style.height = '100%';
+                video.style.objectFit = 'cover';
+
+                // Clear and add video
+                scannerView.innerHTML = '';
+                scannerView.appendChild(video);
+                
+                // Add scanner frame
+                const frame = document.createElement('div');
+                frame.className = 'scanner-frame';
+                scannerView.appendChild(frame);
+
+                // Play video
+                await video.play();
+
+                // Update buttons
+                startBtn.style.display = 'none';
+                stopBtn.style.display = 'block';
+
+                // Start scanning
+                isScanning = true;
+                startQRScanning(video, frame);
+                
+                showAlert('Scanner started successfully!', 'success');
+
+            } catch (error) {
+                console.error('Camera error:', error);
+                showAlert('Camera access denied or not available. Please use manual entry or test scan.', 'error');
+                
+                // Show camera error message
+                scannerView.innerHTML = `
+                    <div class="scanner-placeholder">
+                        <i class="fas fa-camera-slash"></i>
+                        <p>Camera not available</p>
+                        <p class="small">Please allow camera access or use manual entry</p>
+                        <button class="btn btn-primary" onclick="simulateTestScan()" style="margin-top: 1rem;">
+                            <i class="fas fa-qrcode"></i> Simulate Scan
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        function stopScanner() {
+            isScanning = false;
+            
+            if (videoStream) {
+                videoStream.getTracks().forEach(track => track.stop());
+                videoStream = null;
+            }
+
+            const scannerView = document.getElementById('scannerView');
+            const startBtn = document.getElementById('startScannerBtn');
+            const stopBtn = document.getElementById('stopScannerBtn');
+
+            scannerView.innerHTML = `
+                <div class="scanner-placeholder">
+                    <i class="fas fa-qrcode"></i>
+                    <p>Scanner stopped</p>
+                    <p class="small">Press "Start Scanner" to begin</p>
+                </div>
+            `;
+
+            startBtn.style.display = 'block';
+            stopBtn.style.display = 'none';
+            
+            showAlert('Scanner stopped', 'info');
+        }
+
+        function startQRScanning(video, frame) {
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            
+            function scanFrame() {
+                if (!isScanning || video.readyState !== video.HAVE_ENOUGH_DATA) {
+                    if (isScanning) {
+                        requestAnimationFrame(scanFrame);
+                    }
+                    return;
+                }
+
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                // In a real implementation, you would use a QR code library here
+                // For this demo, we'll simulate scanning
+                simulateQRDetection();
+                
+                if (isScanning) {
+                    requestAnimationFrame(scanFrame);
+                }
+            }
+
+            scanFrame();
+        }
+
+        function simulateQRDetection() {
+            // Simulate random QR detection (for demo purposes)
+            if (Math.random() < 0.01) { // 1% chance per frame
+                const mockQRData = {
+                    qrCodeId: 'QR_' + Math.floor(Math.random() * 1000),
+                    unitName: 'Database Systems',
+                    unitCode: 'CS301',
+                    lecturerName: 'Dr. John Smith',
+                    duration: 30,
+                    createdAt: new Date().toISOString(),
+                    expiresAt: new Date(Date.now() + 30 * 60000).toISOString()
+                };
+                
+                processQRCode(JSON.stringify(mockQRData));
+                stopScanner(); // Stop after successful scan
+            }
+        }
+
+        async function processQRCode(qrData) {
+            showScanningStatus();
+            
+            try {
+                const session = JSON.parse(localStorage.getItem('attendance_session'));
+                const token = session.token;
+
+                const response = await fetch(`${API_BASE_URL}/api/attendance/scan`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        qrCode: qrData,
+                        scanTime: new Date().toISOString()
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    showScanSuccess(data.attendance, JSON.parse(qrData));
+                    loadRecentScans();
+                } else {
+                    throw new Error(data.message || 'Scan failed');
+                }
+
+            } catch (error) {
+                console.error('Scan error:', error);
+                showScanError(error.message);
+            }
+        }
+
+        function showScanningStatus() {
+            const resultDiv = document.getElementById('scanResult');
+            resultDiv.innerHTML = `
+                <div class="scan-status scanning">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <div>
+                        <h4>Processing QR Code...</h4>
+                        <p>Please wait while we record your attendance</p>
+                    </div>
+                </div>
+            `;
+            resultDiv.classList.add('active');
+        }
+
+        function showScanSuccess(attendance, qrData) {
+            const resultDiv = document.getElementById('scanResult');
+            resultDiv.innerHTML = `
+                <div class="scan-status success">
+                    <i class="fas fa-check-circle"></i>
+                    <div>
+                        <h4>Attendance Recorded!</h4>
+                        <p>Your attendance has been successfully recorded</p>
+                    </div>
+                </div>
+                <div class="scan-details">
+                    <p>
+                        <span>Unit:</span>
+                        <span>${qrData.unitName} (${qrData.unitCode})</span>
+                    </p>
+                    <p>
+                        <span>Date:</span>
+                        <span>${attendance.date || new Date().toLocaleDateString()}</span>
+                    </p>
+                    <p>
+                        <span>Time:</span>
+                        <span>${attendance.time || new Date().toLocaleTimeString()}</span>
+                    </p>
+                    <p>
+                        <span>Lecturer:</span>
+                        <span>${qrData.lecturerName}</span>
+                    </p>
+                    <p>
+                        <span>Status:</span>
+                        <span class="badge bg-success">Present</span>
+                    </p>
+                </div>
+                <button class="btn btn-outline btn-block" onclick="this.parentElement.classList.remove('active')" style="margin-top: 1rem;">
+                    Close
+                </button>
+            `;
+            resultDiv.classList.add('active');
+            
+            // Play success sound if available
+            playSuccessSound();
+        }
+
+        function showScanError(errorMessage) {
+            const resultDiv = document.getElementById('scanResult');
+            resultDiv.innerHTML = `
+                <div class="scan-status error">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <div>
+                        <h4>Scan Failed</h4>
+                        <p>${errorMessage}</p>
+                    </div>
+                </div>
+                <div class="scan-details">
+                    <p>Possible reasons:</p>
+                    <ul>
+                        <li>QR code has expired</li>
+                        <li>Already scanned for this class</li>
+                        <li>Invalid QR code</li>
+                    </ul>
+                </div>
+                <button class="btn btn-outline btn-block" onclick="this.parentElement.classList.remove('active')" style="margin-top: 1rem;">
+                    Try Again
+                </button>
+            `;
+            resultDiv.classList.add('active');
+        }
+
+        function playSuccessSound() {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                oscillator.frequency.value = 800;
+                oscillator.type = 'sine';
+
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.5);
+            } catch (error) {
+                // Audio not supported, ignore
+            }
+        }
+
+        function openManualEntry() {
+            const qrData = prompt('Enter QR code data (JSON format):');
+            if (qrData) {
+                processQRCode(qrData);
+            }
+        }
+
+        async function submitManualEntry() {
+            const qrData = document.getElementById('manualQRCode').value.trim();
+            if (!qrData) {
+                showAlert('Please enter QR code data', 'error');
+                return;
+            }
+
+            try {
+                // Validate JSON
+                JSON.parse(qrData);
+                await processQRCode(qrData);
+                document.getElementById('manualQRCode').value = '';
+            } catch (error) {
+                showAlert('Invalid JSON format. Please enter valid QR code data.', 'error');
+            }
+        }
+
+        function simulateTestScan() {
+            const testQRData = {
+                qrCodeId: 'TEST_QR_' + Date.now(),
+                unitName: 'Test Unit',
+                unitCode: 'TEST101',
+                lecturerName: 'Test Lecturer',
+                duration: 60,
+                createdAt: new Date().toISOString(),
+                expiresAt: new Date(Date.now() + 60 * 60000).toISOString()
+            };
+            
+            processQRCode(JSON.stringify(testQRData));
+        }
+
+        function simulateLectureScan() {
+            const lectureQR = {
+                qrCodeId: 'LECTURE_' + Date.now(),
+                unitName: 'Database Systems',
+                unitCode: 'CS301',
+                lecturerName: 'Dr. John Smith',
+                duration: 90,
+                createdAt: new Date().toISOString(),
+                expiresAt: new Date(Date.now() + 90 * 60000).toISOString()
+            };
+            
+            processQRCode(JSON.stringify(lectureQR));
+        }
+
+        function simulateLabScan() {
+            const labQR = {
+                qrCodeId: 'LAB_' + Date.now(),
+                unitName: 'Web Development Lab',
+                unitCode: 'CS302',
+                lecturerName: 'Prof. Mary Johnson',
+                duration: 120,
+                createdAt: new Date().toISOString(),
+                expiresAt: new Date(Date.now() + 120 * 60000).toISOString()
+            };
+            
+            processQRCode(JSON.stringify(labQR));
+        }
+
+        function simulateTutorialScan() {
+            const tutorialQR = {
+                qrCodeId: 'TUTORIAL_' + Date.now(),
+                unitName: 'Mathematics Tutorial',
+                unitCode: 'MATH101',
+                lecturerName: 'Dr. Robert Williams',
+                duration: 60,
+                createdAt: new Date().toISOString(),
+                expiresAt: new Date(Date.now() + 60 * 60000).toISOString()
+            };
+            
+            processQRCode(JSON.stringify(tutorialQR));
+        }
+
+        async function loadRecentScans() {
+            if (!currentUser) return;
+
+            try {
+                const session = JSON.parse(localStorage.getItem('attendance_session'));
+                const token = session.token;
+
+                const response = await fetch(`${API_BASE_URL}/api/students/${currentUser.id}/attendance`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+                updateRecentScansTable(data.attendance || []);
+
+            } catch (error) {
+                console.error('Load scans error:', error);
+                showMockScans();
+            }
+        }
+
+        function showMockScans() {
+            const mockScans = [
+                {
+                    date: '2024-01-15',
+                    time: '10:30 AM',
+                    unitName: 'Database Systems',
+                    unitCode: 'CS301',
+                    lecturerName: 'Dr. John Smith',
+                    status: 'present'
+                },
+                {
+                    date: '2024-01-14',
+                    time: '2:00 PM',
+                    unitName: 'Web Development',
+                    unitCode: 'CS302',
+                    lecturerName: 'Prof. Mary Johnson',
+                    status: 'present'
+                },
+                {
+                    date: '2024-01-13',
+                    time: '9:00 AM',
+                    unitName: 'Mathematics',
+                    unitCode: 'MATH101',
+                    lecturerName: 'Dr. Robert Williams',
+                    status: 'absent'
+                }
+            ];
+            
+            updateRecentScansTable(mockScans);
+        }
+
+        function updateRecentScansTable(scans) {
+            const tbody = document.getElementById('recentScansBody');
+            
+            if (!scans.length) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center">No scans recorded yet</td>
+                    </tr>
+                `;
+                return;
+            }
+
+            const rows = scans.map(scan => {
+                const statusClass = scan.status === 'present' ? 'bg-success' : 
+                                   scan.status === 'late' ? 'bg-warning' : 'bg-danger';
+                
+                return `
+                    <tr>
+                        <td>${scan.date}</td>
+                        <td>${scan.time}</td>
+                        <td>${scan.unitName}</td>
+                        <td>${scan.unitCode}</td>
+                        <td>${scan.lecturerName}</td>
+                        <td>
+                            <span class="badge ${statusClass}">
+                                ${scan.status.charAt(0).toUpperCase() + scan.status.slice(1)}
+                            </span>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+            
+            tbody.innerHTML = rows;
+        }
+
+        function refreshScans() {
+            showAlert('Refreshing scan history...', 'info');
+            loadRecentScans();
+        }
+
+        function showAlert(message, type = 'info') {
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 9999;
+                padding: 1rem 1.25rem;
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                max-width: 400px;
+                animation: slideIn 0.3s ease-out;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            `;
+            
+            // Set colors
+            let bgColor, textColor, borderColor;
+            switch(type) {
+                case 'success': 
+                    bgColor = '#dcfce7'; textColor = '#166534'; borderColor = '#bbf7d0'; break;
+                case 'error': 
+                    bgColor = '#fee2e2'; textColor = '#991b1b'; borderColor = '#fecaca'; break;
+                case 'warning': 
+                    bgColor = '#fef3c7'; textColor = '#92400e'; borderColor = '#fde68a'; break;
+                default: 
+                    bgColor = '#dbeafe'; textColor = '#1e40af'; borderColor = '#bfdbfe';
+            }
+            
+            alert.style.backgroundColor = bgColor;
+            alert.style.color = textColor;
+            alert.style.border = `1px solid ${borderColor}`;
+            
+            let icon = 'info-circle';
+            if (type === 'success') icon = 'check-circle';
+            if (type === 'error') icon = 'exclamation-circle';
+            if (type === 'warning') icon = 'exclamation-triangle';
+            
+            alert.innerHTML = `
+                <i class="fas fa-${icon}"></i>
+                <span>${message}</span>
+                <button onclick="this.parentElement.remove()" style="
+                    background: none;
+                    border: none;
+                    color: inherit;
+                    margin-left: 15px;
+                    cursor: pointer;
+                ">×</button>
+            `;
+            
+            document.body.appendChild(alert);
+            
+            setTimeout(() => {
+                if (alert.parentNode) alert.remove();
+            }, 5000);
+        }
+
+        // Global functions
+        window.viewAttendanceHistory = function() {
+            showAlert('Showing attendance history', 'info');
+            // In real implementation, navigate to attendance history page
+        };
+
+        window.viewCourses = function() {
+            showAlert('Showing my courses', 'info');
+            // In real implementation, navigate to courses page
+        };
+
+        window.changePassword = function() {
+            showAlert('Change password feature coming soon', 'info');
+        };
+
+        window.logout = function() {
+            if (confirm('Are you sure you want to logout?')) {
+                localStorage.removeItem('attendance_session');
+                window.location.href = 'login.html';
+            }
+        };
+    </script>
+</body>
+</html>
