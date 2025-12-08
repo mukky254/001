@@ -601,9 +601,18 @@
                                         <input type="text" id="topic" class="form-control" 
                                                placeholder="e.g., Introduction to SQL">
                                     </div>
-                                    <button type="submit" class="btn btn-primary btn-block" id="generateBtn">
-                                        <i class="fas fa-qrcode"></i> Generate QR Code
-                                    </button>
+                                    <!-- Replace the existing QR display buttons section -->
+<div class="mt-4">
+    <button class="btn btn-success" id="printQRBtn">
+        <i class="fas fa-print"></i> Print QR Code
+    </button>
+    <button class="btn btn-info" id="downloadQRBtn">
+        <i class="fas fa-download"></i> Download QR
+    </button>
+    <button class="btn btn-whatsapp" id="whatsappShareBtn" style="background: #25D366; color: white;">
+        <i class="fab fa-whatsapp"></i> Share on WhatsApp
+    </button>
+</div>
                                 </form>
                             </div>
                         </div>
