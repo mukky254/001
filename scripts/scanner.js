@@ -1,161 +1,113 @@
-// scanner.js - UPDATED FOR YOUR HTML STRUCTURE
+// scanner.js - COMPLETE WORKING SCANNER WITH ANALYSIS
 document.addEventListener('DOMContentLoaded', function() {
     const API_BASE_URL = 'https://zero0-1-r0xs.onrender.com';
     
-    // Variables for scanner
+    // Scanner variables
     let videoStream = null;
-    let currentCamera = 'environment'; // 'environment' for back camera
+    let currentCamera = 'environment';
     let isScanning = false;
     let scanInterval = null;
-    let lastScannedQR = null;
+    let flashEnabled = false;
+    let lastScannedData = null;
+    let scanAttempts = 0;
+    let successfulScans = 0;
+    let failedScans = 0;
     
-    // Get DOM elements
-    const scannerView = document.getElementById('scannerView');
+    // DOM Elements
+    const video = document.getElementById('scannerVideo');
+    const canvas = document.getElementById('scannerCanvas');
+    const ctx = canvas.getContext('2d');
+    const scannerStatus = document.getElementById('scannerStatus');
     const startBtn = document.getElementById('startScannerBtn');
     const stopBtn = document.getElementById('stopScannerBtn');
+    const switchBtn = document.getElementById('switchCameraBtn');
+    const flashBtn = document.getElementById('flashToggleBtn');
     const manualEntryBtn = document.getElementById('manualEntryBtn');
     const testScanBtn = document.getElementById('testScanBtn');
+    const scanResult = document.getElementById('scanResult');
+    const qrDataDisplay = document.getElementById('qrDataDisplay');
+    const qrFields = document.getElementById('qrFields');
+    const saveAttendanceBtn = document.getElementById('saveAttendanceBtn');
+    const scanAgainBtn = document.getElementById('scanAgainBtn');
     const refreshScansBtn = document.getElementById('refreshScansBtn');
     const recentScansBody = document.getElementById('recentScansBody');
-    const manualEntryModal = document.getElementById('manualEntryModal');
-    const manualQRCodeInput = document.getElementById('manualQRCode');
-    const scanResult = document.getElementById('scanResult');
+    const totalScansToday = document.getElementById('totalScansToday');
+    const successfulScansEl = document.getElementById('successfulScans');
+    const failedScansEl = document.getElementById('failedScans');
     
-    // Create video and canvas elements
-    const video = document.createElement('video');
-    video.setAttribute('playsinline', '');
-    video.style.width = '100%';
-    video.style.height = 'auto';
-    video.style.borderRadius = '8px';
+    // QR Info Panel elements
+    const noScanMessage = document.getElementById('noScanMessage');
+    const qrDetails = document.getElementById('qrDetails');
+    const qrInfoElements = {
+        qrCodeId: document.getElementById('qrCodeId'),
+        qrUnitName: document.getElementById('qrUnitName'),
+        qrUnitCode: document.getElementById('qrUnitCode'),
+        qrClassType: document.getElementById('qrClassType'),
+        qrLecturer: document.getElementById('qrLecturer'),
+        qrTopic: document.getElementById('qrTopic'),
+        qrDuration: document.getElementById('qrDuration'),
+        qrGenerated: document.getElementById('qrGenerated'),
+        qrExpires: document.getElementById('qrExpires'),
+        qrStatus: document.getElementById('qrStatus'),
+        qrValidUntil: document.getElementById('qrValidUntil')
+    };
     
-    const canvas = document.createElement('canvas');
-    canvas.style.display = 'none';
-    
-    // Create canvas context
-    const ctx = canvas.getContext('2d');
-    
-    // Initialize
+    // Initialize scanner
     initScanner();
-    loadRecentScans();
     
     // Event Listeners
     startBtn.addEventListener('click', startScanner);
     stopBtn.addEventListener('click', stopScanner);
+    switchBtn.addEventListener('click', switchCamera);
+    flashBtn.addEventListener('click', toggleFlash);
     manualEntryBtn.addEventListener('click', openManualEntry);
     testScanBtn.addEventListener('click', performTestScan);
+    saveAttendanceBtn.addEventListener('click', saveAttendance);
+    scanAgainBtn.addEventListener('click', scanAgain);
     if (refreshScansBtn) {
         refreshScansBtn.addEventListener('click', loadRecentScans);
     }
     
     // Initialize scanner
     function initScanner() {
-        // Check if user is logged in
-        checkAuth();
+        console.log('Initializing QR scanner...');
         
-        // Hide scanner view until started
-        scannerView.innerHTML = `
-            <div class="scanner-placeholder">
-                <i class="fas fa-qrcode fa-4x"></i>
-                <p>Ready to scan</p>
-                <p class="small text-muted">Press "Start Scanner" to begin</p>
-            </div>
-        `;
+        // Initialize user data
+        initializeUser();
         
-        // Create initial styles
-        const style = document.createElement('style');
-        style.textContent = `
-            .scanner-placeholder {
-                padding: 40px 20px;
-                text-align: center;
-                color: #6c757d;
-            }
-            .scanner-placeholder i {
-                margin-bottom: 20px;
-                color: #dee2e6;
-            }
-            .scanner-placeholder p {
-                margin: 5px 0;
-            }
-            .scan-success {
-                background-color: #d4edda;
-                border-color: #c3e6cb;
-                color: #155724;
-                padding: 10px;
-                border-radius: 5px;
-                margin-top: 10px;
-            }
-            .scan-error {
-                background-color: #f8d7da;
-                border-color: #f5c6cb;
-                color: #721c24;
-                padding: 10px;
-                border-radius: 5px;
-                margin-top: 10px;
-            }
-            .scanner-active {
-                position: relative;
-                overflow: hidden;
-                border-radius: 8px;
-            }
-            .scanner-overlay {
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                pointer-events: none;
-            }
-            .scanner-frame {
-                position: absolute;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                width: 250px;
-                height: 250px;
-                border: 3px solid #00ff00;
-                border-radius: 8px;
-                box-shadow: 0 0 0 10000px rgba(0, 0, 0, 0.5);
-            }
-            .scanner-hint {
-                position: absolute;
-                bottom: 20px;
-                left: 0;
-                width: 100%;
-                text-align: center;
-                color: white;
-                font-weight: 500;
-                text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
-            }
-            @keyframes pulse {
-                0% { border-color: #00ff00; }
-                50% { border-color: #00cc00; }
-                100% { border-color: #00ff00; }
-            }
-            .scanner-frame {
-                animation: pulse 2s infinite;
-            }
-        `;
-        document.head.appendChild(style);
+        // Load statistics
+        loadStatistics();
+        loadRecentScans();
+        
+        // Test backend connection
+        testBackendConnection();
+        
+        updateScannerStatus('ready', 'Scanner ready to start');
     }
     
-    // Check authentication
-    function checkAuth() {
-        // For demo, create a default student if none exists
+    // Initialize user data
+    function initializeUser() {
         if (!localStorage.getItem('studentUser')) {
-            localStorage.setItem('studentUser', JSON.stringify({
-                id: 'ST001',
+            const defaultUser = {
+                id: 'ST' + Date.now().toString().slice(-6),
                 name: 'Alice Johnson',
-                role: 'Student',
                 studentId: 'ST001',
+                role: 'Student',
                 email: 'alice@example.com'
-            }));
+            };
+            localStorage.setItem('studentUser', JSON.stringify(defaultUser));
         }
         
         const user = JSON.parse(localStorage.getItem('studentUser'));
-        document.getElementById('userName').textContent = user.name || 'Student';
+        updateUserDisplay(user);
+    }
+    
+    // Update user display
+    function updateUserDisplay(user) {
+        document.getElementById('userName').textContent = user.name;
         document.getElementById('userAvatar').textContent = getInitials(user.name);
         document.getElementById('miniAvatar').textContent = getInitials(user.name);
-        document.getElementById('userRole').textContent = user.role || 'Student';
+        document.getElementById('userRole').textContent = user.role;
     }
     
     function getInitials(name) {
@@ -165,81 +117,45 @@ document.addEventListener('DOMContentLoaded', function() {
     // Start scanner
     async function startScanner() {
         try {
+            console.log('Starting scanner...');
+            
             // Request camera access
             const constraints = {
                 video: {
                     facingMode: currentCamera,
-                    width: { ideal: 640 },
-                    height: { ideal: 480 }
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
                 }
             };
             
-            console.log('Requesting camera access...');
             videoStream = await navigator.mediaDevices.getUserMedia(constraints);
             video.srcObject = videoStream;
             
-            // Set up video playback
-            video.onloadedmetadata = () => {
-                console.log('Video metadata loaded');
-                video.play().then(() => {
-                    console.log('Video playback started');
-                    
-                    // Set canvas dimensions
-                    canvas.width = video.videoWidth;
-                    canvas.height = video.videoHeight;
-                    
-                    // Update scanner view
-                    scannerView.innerHTML = '';
-                    scannerView.classList.add('scanner-active');
-                    scannerView.appendChild(video);
-                    scannerView.appendChild(canvas);
-                    
-                    // Add scanner overlay
-                    const overlay = document.createElement('div');
-                    overlay.className = 'scanner-overlay';
-                    overlay.innerHTML = `
-                        <div class="scanner-frame"></div>
-                        <div class="scanner-hint">Position QR code inside the frame</div>
-                    `;
-                    scannerView.appendChild(overlay);
-                    
-                    // Update UI
-                    startBtn.style.display = 'none';
-                    stopBtn.style.display = 'inline-block';
-                    
-                    // Clear any previous scan results
-                    scanResult.innerHTML = '';
-                    
-                    // Start scanning
-                    isScanning = true;
-                    scanInterval = setInterval(scanQRCode, 300); // Scan every 300ms
-                    
-                    showMessage('Scanner started. Position QR code inside frame.', 'info');
-                    
-                }).catch(err => {
-                    console.error('Video play error:', err);
-                    showMessage('Error starting video playback', 'error');
-                });
-            };
+            // Set up video
+            await video.play();
             
-            video.onerror = (err) => {
-                console.error('Video error:', err);
-                showMessage('Error accessing camera', 'error');
-            };
+            // Set canvas dimensions
+            const track = videoStream.getVideoTracks()[0];
+            const settings = track.getSettings();
+            canvas.width = settings.width || video.videoWidth;
+            canvas.height = settings.height || video.videoHeight;
+            
+            console.log(`Canvas dimensions: ${canvas.width}x${canvas.height}`);
+            
+            // Update UI
+            startBtn.style.display = 'none';
+            stopBtn.style.display = 'inline-block';
+            updateScannerStatus('scanning', 'Scanning for QR codes...');
+            
+            // Start scanning loop
+            isScanning = true;
+            scanInterval = setInterval(scanFrame, 200); // Scan every 200ms
+            
+            showNotification('Scanner started successfully!', 'success');
             
         } catch (error) {
-            console.error('Camera access error:', error);
-            let message = 'Unable to access camera. ';
-            if (error.name === 'NotAllowedError') {
-                message += 'Please allow camera access in your browser settings.';
-            } else if (error.name === 'NotFoundError') {
-                message += 'No camera found on your device.';
-            } else if (error.name === 'NotSupportedError') {
-                message += 'Your browser does not support camera access.';
-            } else {
-                message += error.message;
-            }
-            showMessage(message, 'error');
+            console.error('Failed to start scanner:', error);
+            handleScannerError(error);
         }
     }
     
@@ -249,9 +165,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Stop video stream
         if (videoStream) {
-            videoStream.getTracks().forEach(track => {
-                track.stop();
-            });
+            videoStream.getTracks().forEach(track => track.stop());
             videoStream = null;
         }
         
@@ -261,222 +175,268 @@ document.addEventListener('DOMContentLoaded', function() {
             scanInterval = null;
         }
         
-        // Reset scanner view
-        scannerView.classList.remove('scanner-active');
-        scannerView.innerHTML = `
-            <div class="scanner-placeholder">
-                <i class="fas fa-qrcode fa-4x"></i>
-                <p>Scanner stopped</p>
-                <p class="small text-muted">Press "Start Scanner" to begin</p>
-            </div>
-        `;
-        
-        // Update UI
+        // Reset UI
         startBtn.style.display = 'inline-block';
         stopBtn.style.display = 'none';
-        
         isScanning = false;
-        showMessage('Scanner stopped', 'info');
+        
+        updateScannerStatus('stopped', 'Scanner stopped');
+        showNotification('Scanner stopped', 'info');
     }
     
-    // Scan QR code
-    function scanQRCode() {
-        if (!isScanning || !video.videoWidth || !video.videoHeight) return;
+    // Scan each frame
+    function scanFrame() {
+        if (!isScanning || !video.videoWidth) return;
         
         try {
-            // Draw current video frame to canvas
+            // Draw video frame to canvas
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
             
-            // Get image data from canvas
+            // Get image data
             const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
             
-            // Try to decode QR code
+            // Decode QR code
             const code = jsQR(imageData.data, imageData.width, imageData.height, {
                 inversionAttempts: "dontInvert",
             });
             
-            if (code && code.data) {
-                // Avoid duplicate scans
-                if (lastScannedQR === code.data) {
-                    return;
-                }
-                lastScannedQR = code.data;
-                
-                console.log('QR Code detected:', code.data);
-                handleQRCodeDetected(code.data);
+            if (code) {
+                scanAttempts++;
+                processQRCode(code.data);
             }
         } catch (error) {
             console.error('Scan error:', error);
         }
     }
     
-    // Handle detected QR code
-    async function handleQRCodeDetected(data) {
+    // Process QR code data
+    async function processQRCode(data) {
         try {
-            console.log('Processing QR data:', data);
+            console.log('QR Code detected:', data.substring(0, 100) + '...');
             
-            // Parse QR data
+            // Parse JSON data
             let qrData;
             try {
                 qrData = JSON.parse(data);
-            } catch (parseError) {
-                // If it's a stringified object within a string
-                if (data.startsWith('{"') && data.endsWith('}')) {
-                    try {
-                        qrData = JSON.parse(data);
-                    } catch (e) {
-                        // Try to extract JSON from malformed string
-                        const jsonMatch = data.match(/{.*}/);
-                        if (jsonMatch) {
-                            qrData = JSON.parse(jsonMatch[0]);
-                        } else {
-                            throw new Error('Invalid QR code format');
-                        }
-                    }
-                } else {
-                    throw new Error('Invalid QR code format');
-                }
+            } catch (e) {
+                // Try to clean and parse
+                const cleanedData = data.replace(/[\u0000-\u001F\u007F-\u009F]/g, '').trim();
+                qrData = JSON.parse(cleanedData);
             }
             
-            // Validate QR data structure
-            if (!qrData.qrCodeId) {
-                throw new Error('Invalid QR code: Missing QR ID');
+            // Validate required fields
+            if (!qrData.qrCodeId || !qrData.unitName || !qrData.unitCode) {
+                throw new Error('Invalid QR code format');
             }
             
-            // Check if QR code is expired
-            const expiryTime = new Date(qrData.expiresAt || qrData.expiryTime);
-            const now = new Date();
-            
-            if (now > expiryTime) {
-                showScanResult(false, "QR code has expired!", qrData);
-                return;
+            // Check if this is a duplicate scan
+            if (lastScannedData && lastScannedData.qrCodeId === qrData.qrCodeId) {
+                return; // Ignore duplicate
             }
             
-            // Check if QR code is active
-            if (qrData.isActive === false) {
-                showScanResult(false, "QR code is no longer active!", qrData);
-                return;
-            }
-            
-            // Verify QR code exists in backend
-            try {
-                const isValid = await verifyQRCode(qrData.qrCodeId);
-                if (!isValid) {
-                    showScanResult(false, "Invalid QR code!", qrData);
-                    return;
-                }
-            } catch (verifyError) {
-                console.warn('QR verification failed, proceeding anyway:', verifyError);
-            }
-            
-            // Check if student has already attended
-            const user = JSON.parse(localStorage.getItem('studentUser'));
-            const hasAttended = await checkAttendance(user.studentId, qrData.qrCodeId);
-            
-            if (hasAttended) {
-                showScanResult(false, "You have already attended this class!", qrData);
-                return;
-            }
-            
-            // Show successful scan
-            showScanResult(true, "QR code scanned successfully!", qrData);
+            lastScannedData = qrData;
             
             // Stop scanning temporarily
             if (scanInterval) {
                 clearInterval(scanInterval);
+                scanInterval = null;
                 isScanning = false;
             }
             
-            // Auto-save attendance
+            // Update scanner status
+            updateScannerStatus('success', 'QR code detected!');
+            
+            // Analyze QR code
+            await analyzeQRCode(qrData);
+            
+        } catch (error) {
+            console.error('Error processing QR code:', error);
+            failedScans++;
+            updateStatistics();
+            
+            updateScannerStatus('error', 'Invalid QR code');
+            showNotification('Invalid QR code format', 'error');
+            
+            // Resume scanning after 2 seconds
             setTimeout(() => {
-                saveAttendance(qrData);
-            }, 1000);
-            
-        } catch (error) {
-            console.error('Error handling QR code:', error);
-            showScanResult(false, error.message || "Invalid QR code!", null);
+                if (!isScanning) {
+                    isScanning = true;
+                    scanInterval = setInterval(scanFrame, 200);
+                }
+            }, 2000);
         }
     }
     
-    // Verify QR code with backend
-    async function verifyQRCode(qrCodeId) {
-        try {
-            console.log('Verifying QR code:', qrCodeId);
-            const response = await fetch(`${API_BASE_URL}/api/qrcodes/${qrCodeId}`);
-            
-            if (response.ok) {
-                const qrData = await response.json();
-                console.log('QR code verified:', qrData);
-                return true;
-            }
-            return false;
-        } catch (error) {
-            console.error('QR verification error:', error);
-            return false;
-        }
-    }
-    
-    // Check if student has already attended
-    async function checkAttendance(studentId, qrCodeId) {
-        try {
-            const response = await fetch(`${API_BASE_URL}/api/attendance/check`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ studentId, qrCodeId })
-            });
-            
-            if (response.ok) {
-                const data = await response.json();
-                return data.attended || false;
-            }
-            return false;
-        } catch (error) {
-            console.error('Attendance check error:', error);
-            return false;
-        }
-    }
-    
-    // Show scan result
-    function showScanResult(success, message, qrData) {
-        const resultClass = success ? 'scan-success' : 'scan-error';
-        const icon = success ? 'fa-check-circle' : 'fa-exclamation-circle';
+    // Analyze QR code
+    async function analyzeQRCode(qrData) {
+        console.log('Analyzing QR code:', qrData);
         
-        let resultHTML = `
-            <div class="${resultClass}">
-                <i class="fas ${icon}"></i> ${message}
-            </div>
+        // Display raw data
+        displayRawData(qrData);
+        
+        // Extract and display fields
+        extractAndDisplayFields(qrData);
+        
+        // Validate QR code
+        const validation = validateQRCode(qrData);
+        
+        // Update info panel
+        updateQRInfoPanel(qrData, validation);
+        
+        // Show scan result
+        scanResult.style.display = 'block';
+        saveAttendanceBtn.style.display = validation.isValid ? 'inline-block' : 'none';
+        
+        // Show notification
+        if (validation.isValid) {
+            successfulScans++;
+            showNotification(`✅ Valid QR code: ${qrData.unitName}`, 'success');
+        } else {
+            failedScans++;
+            showNotification(`❌ ${validation.message}`, 'error');
+        }
+        
+        updateStatistics();
+    }
+    
+    // Display raw QR data
+    function displayRawData(qrData) {
+        qrDataDisplay.innerHTML = `
+            <div class="text-muted mb-2">Raw QR Data:</div>
+            <pre style="margin: 0; white-space: pre-wrap;">${JSON.stringify(qrData, null, 2)}</pre>
         `;
-        
-        if (success && qrData) {
-            resultHTML += `
-                <div class="mt-2">
-                    <strong>Class:</strong> ${qrData.unitName || 'Unknown'} (${qrData.unitCode || 'N/A'})<br>
-                    <strong>Lecturer:</strong> ${qrData.lecturerName || qrData.lecturer || 'Unknown'}<br>
-                    <strong>Type:</strong> ${qrData.classType || 'Lecture'}<br>
-                    <small class="text-muted">Recording attendance...</small>
-                </div>
-            `;
-        }
-        
-        scanResult.innerHTML = resultHTML;
     }
     
-    // Save attendance to backend
-    async function saveAttendance(qrData) {
+    // Extract and display fields
+    function extractAndDisplayFields(qrData) {
+        qrFields.innerHTML = '';
+        
+        const fields = [
+            { label: 'QR Code ID', value: qrData.qrCodeId, icon: 'fa-qrcode' },
+            { label: 'Unit Name', value: qrData.unitName, icon: 'fa-book' },
+            { label: 'Unit Code', value: qrData.unitCode, icon: 'fa-hashtag' },
+            { label: 'Class Type', value: qrData.classType, icon: 'fa-chalkboard-teacher' },
+            { label: 'Lecturer', value: qrData.lecturerName || qrData.lecturer, icon: 'fa-user-tie' },
+            { label: 'Topic', value: qrData.topic || 'Not specified', icon: 'fa-comment' },
+            { label: 'Duration', value: qrData.duration ? qrData.duration + ' minutes' : 'N/A', icon: 'fa-clock' },
+            { label: 'Created', value: formatDate(qrData.createdAt), icon: 'fa-calendar-plus' },
+            { label: 'Expires', value: formatDate(qrData.expiresAt || qrData.expiryTime), icon: 'fa-calendar-times' },
+            { label: 'Active', value: qrData.isActive ? 'Yes' : 'No', icon: 'fa-power-off' }
+        ];
+        
+        fields.forEach(field => {
+            const div = document.createElement('div');
+            div.className = 'qr-field';
+            div.innerHTML = `
+                <span class="qr-label">
+                    <i class="fas ${field.icon}"></i> ${field.label}:
+                </span>
+                <span class="qr-value">${field.value}</span>
+            `;
+            qrFields.appendChild(div);
+        });
+    }
+    
+    // Validate QR code
+    function validateQRCode(qrData) {
+        const now = new Date();
+        const expiresAt = new Date(qrData.expiresAt || qrData.expiryTime);
+        const isValidDate = now <= expiresAt;
+        const isActive = qrData.isActive !== false;
+        
+        let isValid = true;
+        let message = 'QR code is valid';
+        
+        if (!isValidDate) {
+            isValid = false;
+            message = 'QR code has expired';
+        } else if (!isActive) {
+            isValid = false;
+            message = 'QR code is inactive';
+        } else if (!qrData.qrCodeId || !qrData.unitName || !qrData.unitCode) {
+            isValid = false;
+            message = 'QR code is missing required information';
+        }
+        
+        return { isValid, message, isValidDate, isActive };
+    }
+    
+    // Update QR info panel
+    function updateQRInfoPanel(qrData, validation) {
+        // Hide "no scan" message
+        noScanMessage.style.display = 'none';
+        qrDetails.style.display = 'block';
+        
+        // Update all fields
+        qrInfoElements.qrCodeId.textContent = qrData.qrCodeId || 'N/A';
+        qrInfoElements.qrUnitName.textContent = qrData.unitName || 'N/A';
+        qrInfoElements.qrUnitCode.textContent = qrData.unitCode || 'N/A';
+        qrInfoElements.qrClassType.textContent = qrData.classType || 'Lecture';
+        qrInfoElements.qrLecturer.textContent = qrData.lecturerName || qrData.lecturer || 'N/A';
+        qrInfoElements.qrTopic.textContent = qrData.topic || 'Not specified';
+        qrInfoElements.qrDuration.textContent = qrData.duration ? qrData.duration + ' minutes' : 'N/A';
+        qrInfoElements.qrGenerated.textContent = formatDate(qrData.createdAt);
+        qrInfoElements.qrExpires.textContent = formatDate(qrData.expiresAt || qrData.expiryTime);
+        qrInfoElements.qrValidUntil.textContent = calculateTimeRemaining(qrData.expiresAt || qrData.expiryTime);
+        
+        // Update status with color
+        let statusHtml = '';
+        if (validation.isValid) {
+            statusHtml = `<span class="valid-qr"><i class="fas fa-check-circle"></i> Valid</span>`;
+        } else {
+            statusHtml = `<span class="invalid-qr"><i class="fas fa-times-circle"></i> ${validation.message}</span>`;
+        }
+        qrInfoElements.qrStatus.innerHTML = statusHtml;
+    }
+    
+    // Format date
+    function formatDate(dateString) {
+        if (!dateString) return 'N/A';
+        const date = new Date(dateString);
+        return date.toLocaleString();
+    }
+    
+    // Calculate time remaining
+    function calculateTimeRemaining(expiryDate) {
+        if (!expiryDate) return 'N/A';
+        
+        const now = new Date();
+        const expiry = new Date(expiryDate);
+        const diffMs = expiry - now;
+        
+        if (diffMs <= 0) return 'Expired';
+        
+        const diffMins = Math.floor(diffMs / (1000 * 60));
+        const diffHours = Math.floor(diffMins / 60);
+        const remainingMins = diffMins % 60;
+        
+        if (diffHours > 0) {
+            return `${diffHours}h ${remainingMins}m remaining`;
+        } else {
+            return `${diffMins} minutes remaining`;
+        }
+    }
+    
+    // Save attendance
+    async function saveAttendance() {
+        if (!lastScannedData) {
+            showNotification('No QR code data to save', 'error');
+            return;
+        }
+        
         const user = JSON.parse(localStorage.getItem('studentUser'));
         
         const attendanceData = {
             studentId: user.studentId,
             studentName: user.name,
-            qrCodeId: qrData.qrCodeId,
-            unitCode: qrData.unitCode,
-            unitName: qrData.unitName,
-            classType: qrData.classType,
-            lecturerName: qrData.lecturerName || qrData.lecturer,
+            qrCodeId: lastScannedData.qrCodeId,
+            unitCode: lastScannedData.unitCode,
+            unitName: lastScannedData.unitName,
+            classType: lastScannedData.classType,
+            lecturerName: lastScannedData.lecturerName || lastScannedData.lecturer,
             scanTime: new Date().toISOString(),
-            status: 'present'
+            status: 'present',
+            validated: true
         };
         
         console.log('Saving attendance:', attendanceData);
@@ -501,39 +461,130 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Update recent scans
                 loadRecentScans();
                 
-                // Show success message
-                showScanResult(true, "✅ Attendance recorded successfully!", qrData);
+                // Show success
+                showNotification('✅ Attendance recorded successfully!', 'success');
                 
-                // Resume scanning after 5 seconds
-                setTimeout(() => {
-                    if (!isScanning) {
-                        startScanner();
-                    }
-                }, 5000);
+                // Update save button
+                saveAttendanceBtn.innerHTML = '<i class="fas fa-check"></i> Attendance Saved';
+                saveAttendanceBtn.className = 'btn btn-success';
+                saveAttendanceBtn.disabled = true;
                 
             } else {
                 const errorText = await response.text();
-                throw new Error(`Server error: ${response.status}`);
+                throw new Error(`Server error: ${errorText}`);
             }
             
         } catch (error) {
             console.error('Error saving attendance:', error);
-            showScanResult(false, "Failed to save attendance. Please try again.", null);
+            showNotification('❌ Failed to save attendance: ' + error.message, 'error');
         }
     }
     
     // Save to localStorage
     function saveToLocalStorage(attendance) {
-        // Save to attendance records
         let attendanceRecords = JSON.parse(localStorage.getItem('attendanceRecords')) || [];
         attendanceRecords.push(attendance);
         localStorage.setItem('attendanceRecords', JSON.stringify(attendanceRecords));
         
-        // Save to recent scans
-        let recentScans = JSON.parse(localStorage.getItem('recentScans')) || [];
-        recentScans.unshift(attendance);
-        if (recentScans.length > 20) recentScans = recentScans.slice(0, 20);
-        localStorage.setItem('recentScans', JSON.stringify(recentScans));
+        // Update today's scans in localStorage
+        let todayScans = JSON.parse(localStorage.getItem('todayScans')) || [];
+        todayScans.push(attendance);
+        localStorage.setItem('todayScans', JSON.stringify(todayScans));
+    }
+    
+    // Scan again
+    function scanAgain() {
+        // Reset UI
+        scanResult.style.display = 'none';
+        noScanMessage.style.display = 'block';
+        qrDetails.style.display = 'none';
+        saveAttendanceBtn.innerHTML = '<i class="fas fa-check-circle"></i> Mark Attendance';
+        saveAttendanceBtn.className = 'btn btn-success';
+        saveAttendanceBtn.disabled = false;
+        saveAttendanceBtn.style.display = 'none';
+        
+        // Clear last scanned data
+        lastScannedData = null;
+        
+        // Restart scanner
+        if (!isScanning) {
+            startScanner();
+        }
+    }
+    
+    // Switch camera
+    function switchCamera() {
+        currentCamera = currentCamera === 'environment' ? 'user' : 'environment';
+        if (isScanning) {
+            stopScanner();
+            setTimeout(() => startScanner(), 500);
+        }
+    }
+    
+    // Toggle flash
+    function toggleFlash() {
+        if (videoStream) {
+            const track = videoStream.getVideoTracks()[0];
+            if (track.getCapabilities && track.getCapabilities().torch) {
+                flashEnabled = !flashEnabled;
+                track.applyConstraints({
+                    advanced: [{ torch: flashEnabled }]
+                }).then(() => {
+                    flashBtn.innerHTML = flashEnabled ? 
+                        '<i class="fas fa-lightbulb"></i> Flash ON' : 
+                        '<i class="fas fa-lightbulb"></i> Flash';
+                }).catch(err => {
+                    console.error('Error toggling flash:', err);
+                });
+            }
+        }
+    }
+    
+    // Manual entry
+    function openManualEntry() {
+        document.getElementById('manualEntryModal').style.display = 'flex';
+    }
+    
+    function closeManualEntry() {
+        document.getElementById('manualEntryModal').style.display = 'none';
+    }
+    
+    function submitManualEntry() {
+        const manualQRCode = document.getElementById('manualQRCode');
+        const data = manualQRCode.value.trim();
+        
+        if (!data) {
+            showNotification('Please enter QR code data', 'error');
+            return;
+        }
+        
+        try {
+            const qrData = JSON.parse(data);
+            processQRCode(JSON.stringify(qrData));
+            closeManualEntry();
+        } catch (error) {
+            showNotification('Invalid JSON format', 'error');
+        }
+    }
+    
+    // Test scan
+    function performTestScan() {
+        const testQRData = {
+            qrCodeId: "QR_TEST_" + Date.now().toString().slice(-8),
+            unitName: "Database Systems",
+            unitCode: "CS301",
+            classType: "lecture",
+            topic: "Introduction to MongoDB",
+            lecturerName: "Dr. Smith",
+            lecturerId: "LEC001",
+            duration: 60,
+            createdAt: new Date().toISOString(),
+            expiresAt: new Date(Date.now() + 3600000).toISOString(), // 1 hour from now
+            isActive: true
+        };
+        
+        processQRCode(JSON.stringify(testQRData));
+        showNotification('Test QR code scanned', 'info');
     }
     
     // Load recent scans
@@ -541,37 +592,33 @@ document.addEventListener('DOMContentLoaded', function() {
         const user = JSON.parse(localStorage.getItem('studentUser'));
         
         try {
-            // Try to load from backend
+            // Try to get from backend
             const response = await fetch(`${API_BASE_URL}/api/attendance/student/${user.studentId}`);
-            
             let scans = [];
             
             if (response.ok) {
                 scans = await response.json();
             } else {
                 // Fallback to localStorage
-                scans = JSON.parse(localStorage.getItem('recentScans')) || [];
+                scans = JSON.parse(localStorage.getItem('attendanceRecords')) || [];
             }
             
-            // Display recent scans
-            displayRecentScans(scans.slice(0, 10)); // Show last 10 scans
+            // Display recent scans (last 10)
+            displayRecentScans(scans.slice(-10).reverse());
             
         } catch (error) {
             console.error('Error loading recent scans:', error);
-            // Fallback to localStorage
-            const scans = JSON.parse(localStorage.getItem('recentScans')) || [];
-            displayRecentScans(scans.slice(0, 10));
+            const scans = JSON.parse(localStorage.getItem('attendanceRecords')) || [];
+            displayRecentScans(scans.slice(-10).reverse());
         }
     }
     
-    // Display recent scans in table
+    // Display recent scans
     function displayRecentScans(scans) {
-        if (!recentScansBody) return;
-        
-        if (scans.length === 0) {
+        if (!scans.length) {
             recentScansBody.innerHTML = `
                 <tr>
-                    <td colspan="5" class="text-center text-muted">
+                    <td colspan="3" class="text-center text-muted">
                         No attendance records yet
                     </td>
                 </tr>
@@ -580,19 +627,22 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         let html = '';
-        
         scans.forEach(scan => {
-            const scanDate = new Date(scan.scanTime || scan.createdAt);
-            const dateStr = scanDate.toLocaleDateString();
-            const timeStr = scanDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            const time = new Date(scan.scanTime).toLocaleTimeString([], { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
             
             html += `
                 <tr>
-                    <td>${dateStr}</td>
-                    <td>${timeStr}</td>
-                    <td>${scan.unitCode || 'N/A'}<br><small class="text-muted">${scan.unitName || ''}</small></td>
-                    <td>${scan.lecturerName || 'Unknown'}</td>
-                    <td><span class="badge badge-success">Present</span></td>
+                    <td>${time}</td>
+                    <td>
+                        <strong>${scan.unitCode}</strong><br>
+                        <small class="text-muted">${scan.unitName}</small>
+                    </td>
+                    <td>
+                        <span class="badge badge-success">Present</span>
+                    </td>
                 </tr>
             `;
         });
@@ -600,117 +650,140 @@ document.addEventListener('DOMContentLoaded', function() {
         recentScansBody.innerHTML = html;
     }
     
-    // Manual entry functions
-    function openManualEntry() {
-        // Populate with example QR data
-        const exampleQR = {
-            qrCodeId: "QR_TEST_123",
-            unitName: "Database Systems",
-            unitCode: "CS301",
-            classType: "lecture",
-            lecturerName: "Dr. Smith",
-            expiresAt: new Date(Date.now() + 3600000).toISOString(),
-            isActive: true
-        };
-        
-        manualQRCodeInput.value = JSON.stringify(exampleQR, null, 2);
-        manualEntryModal.style.display = 'block';
+    // Load statistics
+    function loadStatistics() {
+        const todayScans = JSON.parse(localStorage.getItem('todayScans')) || [];
+        totalScansToday.textContent = todayScans.length;
+        successfulScansEl.textContent = todayScans.filter(s => s.validated).length;
+        failedScansEl.textContent = todayScans.filter(s => !s.validated).length;
     }
     
-    function closeManualEntry() {
-        manualEntryModal.style.display = 'none';
-        manualQRCodeInput.value = '';
+    // Update statistics
+    function updateStatistics() {
+        totalScansToday.textContent = scanAttempts;
+        successfulScansEl.textContent = successfulScans;
+        failedScansEl.textContent = failedScans;
     }
     
-    function submitManualEntry() {
-        const qrDataString = manualQRCodeInput.value.trim();
+    // Update scanner status
+    function updateScannerStatus(status, message) {
+        let statusClass = '';
+        let icon = '';
         
-        if (!qrDataString) {
-            showMessage('Please enter QR code data', 'error');
-            return;
+        switch(status) {
+            case 'ready':
+                statusClass = 'status-idle';
+                icon = 'fa-circle';
+                break;
+            case 'scanning':
+                statusClass = 'status-scanning';
+                icon = 'fa-sync fa-spin';
+                break;
+            case 'success':
+                statusClass = 'status-success';
+                icon = 'fa-check-circle';
+                break;
+            case 'error':
+                statusClass = 'status-error';
+                icon = 'fa-exclamation-circle';
+                break;
+            case 'stopped':
+                statusClass = 'status-idle';
+                icon = 'fa-stop-circle';
+                break;
         }
         
+        scannerStatus.innerHTML = `
+            <span class="status-indicator ${statusClass}">
+                <i class="fas ${icon}"></i> ${message}
+            </span>
+        `;
+    }
+    
+    // Handle scanner errors
+    function handleScannerError(error) {
+        console.error('Scanner error:', error);
+        
+        let message = 'Scanner error: ';
+        if (error.name === 'NotAllowedError') {
+            message = 'Camera access denied. Please allow camera access in browser settings.';
+        } else if (error.name === 'NotFoundError') {
+            message = 'No camera found on this device.';
+        } else if (error.name === 'NotSupportedError') {
+            message = 'Camera not supported in this browser.';
+        } else if (error.name === 'NotReadableError') {
+            message = 'Camera is already in use by another application.';
+        } else {
+            message = error.message;
+        }
+        
+        updateScannerStatus('error', 'Camera Error');
+        showNotification(message, 'error');
+    }
+    
+    // Test backend connection
+    async function testBackendConnection() {
         try {
-            const qrData = JSON.parse(qrDataString);
-            handleQRCodeDetected(JSON.stringify(qrData));
-            closeManualEntry();
+            const response = await fetch(`${API_BASE_URL}/api/qrcodes`);
+            if (response.ok) {
+                console.log('Backend connection successful');
+                showNotification('Connected to attendance system', 'success');
+            } else {
+                console.warn('Backend responded with status:', response.status);
+                showNotification('Backend connection issue', 'warning');
+            }
         } catch (error) {
-            showMessage('Invalid JSON format. Please check your input.', 'error');
+            console.error('Backend connection failed:', error);
+            showNotification('Cannot connect to server', 'error');
         }
     }
     
-    // Test scan function
-    function performTestScan() {
-        // Use your actual QR code data from database
-        const testQRData = {
-            qrCodeId: "QR_3DF8CFEC04CE",
-            unitName: "Calculus",
-            unitCode: "Maths 120",
-            classType: "lecture",
-            topic: "",
-            lecturerId: "ID1",
-            lecturerName: "yusuf hassan",
-            duration: 60,
-            createdAt: "2025-12-08T04:30:46.167Z",
-            expiresAt: new Date(Date.now() + 3600000).toISOString(), // 1 hour from now
-            isActive: true
-        };
+    // Show notification
+    function showNotification(message, type) {
+        // Remove existing notifications
+        const existing = document.querySelector('.global-notification');
+        if (existing) existing.remove();
         
-        // Simulate scanning
-        handleQRCodeDetected(JSON.stringify(testQRData));
-        showMessage('Test scan performed with sample QR code', 'info');
-    }
-    
-    // Show message
-    function showMessage(message, type) {
-        console.log(`${type}: ${message}`);
-        
-        // Create notification if not exists
-        let notification = document.querySelector('.global-notification');
-        if (!notification) {
-            notification = document.createElement('div');
-            notification.className = 'global-notification';
-            document.body.appendChild(notification);
-        }
-        
-        const bgColor = type === 'error' ? '#dc3545' : 
-                       type === 'success' ? '#28a745' : 
-                       type === 'info' ? '#17a2b8' : '#6c757d';
-        
+        // Create notification
+        const notification = document.createElement('div');
+        notification.className = 'global-notification';
         notification.style.cssText = `
             position: fixed;
             top: 20px;
             right: 20px;
-            background: ${bgColor};
+            background: ${type === 'success' ? '#28a745' : 
+                         type === 'error' ? '#dc3545' : 
+                         type === 'warning' ? '#ffc107' : '#17a2b8'};
             color: white;
             padding: 12px 20px;
             border-radius: 8px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             z-index: 9999;
             animation: slideIn 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         `;
         
         notification.innerHTML = `
-            <i class="fas fa-${type === 'error' ? 'exclamation-circle' : 
-                               type === 'success' ? 'check-circle' : 
-                               'info-circle'}"></i>
-            <span style="margin-left: 10px;">${message}</span>
+            <i class="fas ${type === 'success' ? 'fa-check-circle' : 
+                           type === 'error' ? 'fa-exclamation-circle' : 
+                           type === 'warning' ? 'fa-exclamation-triangle' : 'fa-info-circle'}"></i>
+            <span>${message}</span>
         `;
+        
+        document.body.appendChild(notification);
         
         // Remove after 3 seconds
         setTimeout(() => {
             notification.style.animation = 'slideOut 0.3s ease forwards';
-            setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.parentNode.removeChild(notification);
-                }
-            }, 300);
+            setTimeout(() => notification.remove(), 300);
         }, 3000);
     }
     
-    // Add CSS for notifications
-    const notificationStyle = document.createElement('style');
-    notificationStyle.textContent = `
+    // Add animation styles
+    const style = document.createElement('style');
+    style.textContent = `
         @keyframes slideIn {
             from {
                 transform: translateX(100%);
@@ -731,25 +804,32 @@ document.addEventListener('DOMContentLoaded', function() {
                 opacity: 0;
             }
         }
+        .stat-box {
+            padding: 15px;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+        .stat-box h3 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 700;
+        }
+        .stat-box small {
+            color: #6c757d;
+            font-size: 12px;
+        }
     `;
-    document.head.appendChild(notificationStyle);
+    document.head.appendChild(style);
     
     // Close modal when clicking outside
     window.addEventListener('click', function(event) {
-        if (event.target === manualEntryModal) {
+        const modal = document.getElementById('manualEntryModal');
+        if (event.target === modal) {
             closeManualEntry();
         }
     });
     
-    // Add logout function
-    window.logout = function() {
-        if (confirm('Are you sure you want to logout?')) {
-            localStorage.removeItem('studentUser');
-            window.location.href = 'login.html';
-        }
-    };
-    
-    // Stop scanner when leaving page
+    // Clean up on page unload
     window.addEventListener('beforeunload', function() {
         if (videoStream) {
             videoStream.getTracks().forEach(track => track.stop());
@@ -758,27 +838,4 @@ document.addEventListener('DOMContentLoaded', function() {
             clearInterval(scanInterval);
         }
     });
-    
-    // Initial test of backend connection
-    async function testBackendConnection() {
-        try {
-            const response = await fetch(`${API_BASE_URL}/api/qrcodes`);
-            console.log('Backend connection test:', response.status);
-            
-            if (response.ok) {
-                const data = await response.json();
-                console.log('Backend has', data.length, 'QR codes');
-                showMessage(`Connected to backend (${data.length} QR codes found)`, 'success');
-            } else {
-                console.warn('Backend responded with status:', response.status);
-                showMessage('Backend connection issue', 'warning');
-            }
-        } catch (error) {
-            console.error('Backend connection failed:', error);
-            showMessage('Cannot connect to backend server', 'error');
-        }
-    }
-    
-    // Test backend connection on load
-    setTimeout(testBackendConnection, 1000);
 });
