@@ -1,20 +1,11 @@
-// qr-generator.js - UPDATED FOR YOUR SERVER ENDPOINTS
+// qr-generator.js - COMPLETE FIXED VERSION WITH WHATSAPP SHARING
 document.addEventListener('DOMContentLoaded', function() {
     const API_BASE_URL = 'https://zero0-1-r0xs.onrender.com';
+    let currentQRCode = null;
     
-    // Initialize QRCode instance
-    const qrcode = new QRCode(document.getElementById("qrcode"), {
-        text: "Waiting for data...",
-        width: 250,
-        height: 250,
-        colorDark: "#000000",
-        colorLight: "#ffffff",
-        correctLevel: QRCode.CorrectLevel.H
-    });
-
     // Check authentication
     checkAuth();
-
+    
     // Generate QR Code
     document.getElementById('qrGenerationForm').addEventListener('submit', async function(e) {
         e.preventDefault();
@@ -25,18 +16,18 @@ document.addEventListener('DOMContentLoaded', function() {
         const classType = document.getElementById('classType').value;
         const topic = document.getElementById('topic').value || "";
         
-        // Get lecturer info from localStorage
+        // Get lecturer info
         const user = JSON.parse(localStorage.getItem('user'));
         const lecturerId = user?.id || "LT001";
         const lecturerName = user?.name || document.getElementById('userName').textContent || "Lecturer";
         
-        // Generate unique QR Code ID
-        const qrCodeId = generateQRCodeId();
+        // Generate QR Code ID
+        const qrCodeId = 'QR_' + Math.random().toString(36).substr(2, 9).toUpperCase();
         const createdAt = new Date();
         const expiresAt = new Date(createdAt.getTime() + duration * 60000);
         
-        // Create QR data object
-        const qrDataObject = {
+        // Create QR data
+        const qrData = {
             qrCodeId: qrCodeId,
             unitName: unitName,
             unitCode: unitCode,
@@ -50,9 +41,6 @@ document.addEventListener('DOMContentLoaded', function() {
             isActive: true
         };
         
-        // Stringify for QR code image
-        const qrDataString = JSON.stringify(qrDataObject);
-        
         // Show loading
         const generateBtn = document.getElementById('generateBtn');
         const originalText = generateBtn.innerHTML;
@@ -60,47 +48,20 @@ document.addEventListener('DOMContentLoaded', function() {
         generateBtn.disabled = true;
         
         try {
-            // Get JWT token from localStorage
-            const token = localStorage.getItem('token');
-            if (!token) {
-                throw new Error('No authentication token found. Please login again.');
-            }
-            
             // Generate QR Code image
-            qrcode.makeCode(qrDataString);
+            generateQRCodeImage(qrData);
             
-            // Send to backend - Use YOUR ACTUAL ENDPOINT
-            const response = await fetch(`${API_BASE_URL}/api/lecturers/generate-qr`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    unitName: unitName,
-                    unitCode: unitCode,
-                    duration: duration,
-                    classType: classType,
-                    topic: topic
-                })
-            });
-            
-            const responseData = await response.json();
-            
-            if (!response.ok) {
-                throw new Error(responseData.message || 'Failed to generate QR code');
-            }
-            
-            console.log('QR Code generated:', responseData);
+            // Save to backend
+            const savedQR = await saveQRToBackend(qrData);
             
             // Display QR info
-            displayQRInfo(qrDataObject);
+            displayQRInfo(qrData);
             
             // Show QR display section
             document.getElementById('qrDisplay').style.display = 'block';
             
-            // Save to localStorage for recent QR codes
-            saveQRToLocalStorage(qrDataObject);
+            // Save to localStorage
+            saveQRToLocalStorage(qrData);
             
             // Update recent QR codes list
             loadRecentQRCodes();
@@ -108,32 +69,19 @@ document.addEventListener('DOMContentLoaded', function() {
             // Success message
             showNotification('QR code generated successfully!', 'success');
             
+            // Enable WhatsApp sharing
+            setupWhatsAppSharing(qrData);
+            
         } catch (error) {
             console.error('Error generating QR:', error);
-            showNotification('Failed to generate QR code: ' + error.message, 'error');
+            showNotification('Failed to generate QR code. ' + error.message, 'error');
             
-            // Fallback: Save locally if backend fails
-            const qrDataObject = {
-                qrCodeId: qrCodeId,
-                unitName: unitName,
-                unitCode: unitCode,
-                classType: classType,
-                topic: topic,
-                lecturerId: lecturerId,
-                lecturerName: lecturerName,
-                duration: duration,
-                createdAt: new Date().toISOString(),
-                expiresAt: new Date(Date.now() + duration * 60000).toISOString(),
-                isActive: true
-            };
-            
-            qrcode.makeCode(JSON.stringify(qrDataObject));
-            displayQRInfo(qrDataObject);
+            // Fallback: Generate QR locally
+            generateQRCodeImage(qrData);
+            displayQRInfo(qrData);
             document.getElementById('qrDisplay').style.display = 'block';
-            saveQRToLocalStorage(qrDataObject);
-            loadRecentQRCodes();
-            
-            showNotification('QR code generated locally (backend unreachable)', 'warning');
+            saveQRToLocalStorage(qrData);
+            showNotification('QR code generated locally', 'warning');
         } finally {
             // Reset button
             generateBtn.innerHTML = originalText;
@@ -141,56 +89,271 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Download QR Code
-    document.getElementById('downloadQRBtn').addEventListener('click', function() {
-        const canvas = document.querySelector("#qrcode canvas");
-        if (canvas) {
+    // Generate QR Code Image
+    function generateQRCodeImage(qrData) {
+        const qrString = JSON.stringify(qrData);
+        const qrcodeElement = document.getElementById('qrcode');
+        
+        // Clear previous QR code
+        qrcodeElement.innerHTML = '';
+        
+        // Generate QR code
+        QRCode.toCanvas(qrString, { 
+            errorCorrectionLevel: 'H',
+            width: 250,
+            margin: 2,
+            color: {
+                dark: '#000000',
+                light: '#FFFFFF'
+            }
+        }, function(err, canvas) {
+            if (err) {
+                console.error('QR Code generation error:', err);
+                // Fallback to basic QR code
+                qrcodeElement.innerHTML = `<div style="color: red; padding: 20px;">QR Code Error: ${err.message}</div>`;
+                return;
+            }
+            
+            // Add canvas to display
+            canvas.style.border = '1px solid #ddd';
+            canvas.style.borderRadius = '8px';
+            canvas.style.padding = '10px';
+            canvas.style.background = 'white';
+            qrcodeElement.appendChild(canvas);
+            
+            // Store current QR code data URL for sharing
+            currentQRCode = canvas.toDataURL('image/png');
+            
+            // Add download button functionality
+            setupDownloadButton(canvas, qrData);
+        });
+    }
+    
+    // Setup download button
+    function setupDownloadButton(canvas, qrData) {
+        const downloadBtn = document.getElementById('downloadQRBtn');
+        downloadBtn.onclick = function() {
             const link = document.createElement('a');
-            link.download = `attendance-${document.getElementById('qrUnitCode').textContent}-${Date.now()}.png`;
+            link.download = `attendance-${qrData.unitCode}-${Date.now()}.png`;
             link.href = canvas.toDataURL('image/png');
             link.click();
+            showNotification('QR code downloaded!', 'success');
+        };
+    }
+    
+    // Setup WhatsApp sharing
+    function setupWhatsAppSharing(qrData) {
+        const whatsappBtn = document.getElementById('whatsappShareBtn');
+        if (!whatsappBtn) {
+            // Create WhatsApp share button if it doesn't exist
+            const shareContainer = document.querySelector('.mt-4') || document.querySelector('.card-body .mt-4');
+            if (shareContainer) {
+                const newWhatsappBtn = document.createElement('button');
+                newWhatsappBtn.id = 'whatsappShareBtn';
+                newWhatsappBtn.className = 'btn btn-success';
+                newWhatsappBtn.innerHTML = '<i class="fab fa-whatsapp"></i> Share via WhatsApp';
+                shareContainer.appendChild(newWhatsappBtn);
+                
+                newWhatsappBtn.onclick = function() {
+                    shareViaWhatsApp(qrData);
+                };
+            }
+        } else {
+            whatsappBtn.onclick = function() {
+                shareViaWhatsApp(qrData);
+            };
         }
-    });
+    }
+    
+    // Share via WhatsApp
+    function shareViaWhatsApp(qrData) {
+        if (!currentQRCode) {
+            showNotification('Please generate a QR code first', 'error');
+            return;
+        }
+        
+        // Convert data URL to blob
+        fetch(currentQRCode)
+            .then(res => res.blob())
+            .then(blob => {
+                // Create file for sharing
+                const file = new File([blob], `attendance-qr-${qrData.unitCode}.png`, { type: 'image/png' });
+                
+                // Create message
+                const message = `📚 *Class Attendance QR Code*\n\n` +
+                              `*Unit:* ${qrData.unitName} (${qrData.unitCode})\n` +
+                              `*Lecturer:* ${qrData.lecturerName}\n` +
+                              `*Class Type:* ${qrData.classType}\n` +
+                              `*Topic:* ${qrData.topic || 'Not specified'}\n` +
+                              `*Valid Until:* ${new Date(qrData.expiresAt).toLocaleString()}\n\n` +
+                              `Scan this QR code with the attendance app to mark your presence.`;
+                
+                // Create WhatsApp share URL
+                const text = encodeURIComponent(message);
+                const whatsappUrl = `https://wa.me/?text=${text}`;
+                
+                // Open WhatsApp in new tab
+                window.open(whatsappUrl, '_blank');
+                
+                // For mobile devices, try to share via Web Share API
+                if (navigator.share) {
+                    navigator.share({
+                        title: 'Attendance QR Code',
+                        text: message,
+                        files: [file]
+                    }).then(() => {
+                        console.log('Shared successfully');
+                    }).catch(err => {
+                        console.log('Error sharing:', err);
+                    });
+                }
+            })
+            .catch(err => {
+                console.error('Error preparing share:', err);
+                // Fallback to text-only share
+                const message = `📚 *Class Attendance QR Code*\n\n` +
+                              `*Unit:* ${qrData.unitName} (${qrData.unitCode})\n` +
+                              `*Lecturer:* ${qrData.lecturerName}\n` +
+                              `*Valid Until:* ${new Date(qrData.expiresAt).toLocaleString()}\n\n` +
+                              `Scan with your attendance app!`;
+                
+                const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+                window.open(whatsappUrl, '_blank');
+            });
+    }
     
     // Print QR Code
     document.getElementById('printQRBtn').addEventListener('click', function() {
-        const printWindow = window.open('', '_blank');
-        const qrContent = `
+        const printContent = `
+            <!DOCTYPE html>
             <html>
             <head>
                 <title>Attendance QR Code</title>
                 <style>
-                    body { font-family: Arial, sans-serif; padding: 20px; }
-                    .qr-container { text-align: center; margin: 20px 0; }
-                    .qr-info { text-align: left; margin-top: 20px; border: 1px solid #ccc; padding: 15px; border-radius: 5px; }
-                    .qr-info h3 { color: #333; margin-top: 0; }
-                    .qr-info p { margin: 8px 0; }
-                    .qr-code-img { width: 300px; height: 300px; }
+                    body {
+                        font-family: Arial, sans-serif;
+                        padding: 30px;
+                        max-width: 800px;
+                        margin: 0 auto;
+                    }
+                    .header {
+                        text-align: center;
+                        margin-bottom: 30px;
+                        border-bottom: 2px solid #333;
+                        padding-bottom: 20px;
+                    }
+                    .qr-container {
+                        text-align: center;
+                        margin: 30px 0;
+                        padding: 20px;
+                        border: 1px solid #ddd;
+                        border-radius: 10px;
+                        background: #f9f9f9;
+                    }
+                    .qr-code-img {
+                        width: 300px;
+                        height: 300px;
+                        display: block;
+                        margin: 0 auto 20px auto;
+                    }
+                    .info-container {
+                        margin-top: 30px;
+                        padding: 20px;
+                        border: 1px solid #ddd;
+                        border-radius: 10px;
+                        background: #fff;
+                    }
+                    .info-row {
+                        display: flex;
+                        margin-bottom: 10px;
+                        padding-bottom: 10px;
+                        border-bottom: 1px solid #eee;
+                    }
+                    .info-label {
+                        font-weight: bold;
+                        width: 150px;
+                        color: #333;
+                    }
+                    .info-value {
+                        flex: 1;
+                        color: #555;
+                    }
+                    .footer {
+                        text-align: center;
+                        margin-top: 30px;
+                        color: #666;
+                        font-size: 12px;
+                    }
+                    @media print {
+                        body { padding: 10px; }
+                        .no-print { display: none; }
+                    }
                 </style>
             </head>
             <body>
-                <h2>📊 Attendance QR Code</h2>
-                <div class="qr-container">
-                    <img src="${document.querySelector('#qrcode img').src}" class="qr-code-img">
+                <div class="header">
+                    <h1>📊 Attendance QR Code</h1>
+                    <p>Generated: ${new Date().toLocaleString()}</p>
                 </div>
-                <div class="qr-info">
-                    <h3>📚 Class Information</h3>
-                    <p><strong>Unit:</strong> ${document.getElementById('qrUnitName').textContent}</p>
-                    <p><strong>Code:</strong> ${document.getElementById('qrUnitCode').textContent}</p>
-                    <p><strong>Class Type:</strong> ${document.getElementById('qrClassType').textContent}</p>
-                    <p><strong>Topic:</strong> ${document.getElementById('qrTopic').textContent}</p>
-                    <p><strong>Lecturer:</strong> ${document.getElementById('qrLecturer').textContent}</p>
-                    <p><strong>Generated:</strong> ${document.getElementById('qrGenerated').textContent}</p>
-                    <p><strong>Expires:</strong> ${document.getElementById('qrExpires').textContent}</p>
-                    <p><strong>Duration:</strong> ${document.getElementById('qrDuration').textContent} minutes</p>
+                
+                <div class="qr-container">
+                    <h2>Scan this QR Code</h2>
+                    <img src="${currentQRCode || ''}" class="qr-code-img" alt="QR Code">
                     <p><strong>QR Code ID:</strong> ${document.getElementById('qrCodeId').textContent}</p>
                 </div>
-                <script>window.onload = () => { window.print(); window.close(); }</script>
+                
+                <div class="info-container">
+                    <h2>📚 Class Information</h2>
+                    <div class="info-row">
+                        <div class="info-label">Unit:</div>
+                        <div class="info-value">${document.getElementById('qrUnitName').textContent}</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Code:</div>
+                        <div class="info-value">${document.getElementById('qrUnitCode').textContent}</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Class Type:</div>
+                        <div class="info-value">${document.getElementById('qrClassType').textContent}</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Topic:</div>
+                        <div class="info-value">${document.getElementById('qrTopic').textContent}</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Lecturer:</div>
+                        <div class="info-value">${document.getElementById('qrLecturer').textContent}</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Generated:</div>
+                        <div class="info-value">${document.getElementById('qrGenerated').textContent}</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Expires:</div>
+                        <div class="info-value">${document.getElementById('qrExpires').textContent}</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Duration:</div>
+                        <div class="info-value">${document.getElementById('qrDuration').textContent} minutes</div>
+                    </div>
+                </div>
+                
+                <div class="footer">
+                    <p>Generated by IN Attendance System | ${new Date().getFullYear()}</p>
+                </div>
+                
+                <script>
+                    window.onload = function() {
+                        window.print();
+                        setTimeout(() => window.close(), 1000);
+                    }
+                </script>
             </body>
             </html>
         `;
         
-        printWindow.document.write(qrContent);
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(printContent);
         printWindow.document.close();
     });
     
@@ -201,15 +364,6 @@ document.addEventListener('DOMContentLoaded', function() {
     loadRecentQRCodes();
     
     // Functions
-    function generateQRCodeId() {
-        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-        let result = 'QR_';
-        for (let i = 0; i < 10; i++) {
-            result += chars.charAt(Math.floor(Math.random() * chars.length));
-        }
-        return result;
-    }
-    
     function displayQRInfo(qrData) {
         document.getElementById('qrUnitName').textContent = qrData.unitName;
         document.getElementById('qrUnitCode').textContent = qrData.unitCode;
@@ -222,11 +376,46 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('qrCodeId').textContent = qrData.qrCodeId;
     }
     
+    async function saveQRToBackend(qrData) {
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                throw new Error('No authentication token found');
+            }
+            
+            const response = await fetch(`${API_BASE_URL}/api/lecturers/generate-qr`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    unitName: qrData.unitName,
+                    unitCode: qrData.unitCode,
+                    duration: qrData.duration,
+                    classType: qrData.classType,
+                    topic: qrData.topic
+                })
+            });
+            
+            const responseData = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(responseData.message || 'Failed to save QR code');
+            }
+            
+            return responseData.qrCode || qrData;
+            
+        } catch (error) {
+            console.error('Error saving QR to backend:', error);
+            throw error;
+        }
+    }
+    
     function saveQRToLocalStorage(qrData) {
         let recentQRCodes = JSON.parse(localStorage.getItem('recentQRCodes')) || [];
         recentQRCodes.unshift(qrData);
         
-        // Keep only last 10
         if (recentQRCodes.length > 10) {
             recentQRCodes = recentQRCodes.slice(0, 10);
         }
@@ -236,7 +425,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     async function loadRecentQRCodes() {
         try {
-            // Get token from localStorage
             const token = localStorage.getItem('token');
             const user = JSON.parse(localStorage.getItem('user'));
             
@@ -244,7 +432,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 throw new Error('Not authenticated');
             }
             
-            // Use YOUR ENDPOINT: /api/lecturers/:id/qr-codes
             const response = await fetch(`${API_BASE_URL}/api/lecturers/${user.id}/qr-codes`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -255,7 +442,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 const data = await response.json();
                 displayRecentQRCodes(data.qrCodes || []);
             } else {
-                // Fallback to localStorage
                 const recentQRCodes = JSON.parse(localStorage.getItem('recentQRCodes')) || [];
                 displayRecentQRCodes(recentQRCodes);
             }
@@ -307,13 +493,12 @@ document.addEventListener('DOMContentLoaded', function() {
             tbody.appendChild(row);
         });
         
-        // Add event listeners to buttons
+        // Add event listeners
         document.querySelectorAll('.view-qr-btn').forEach(btn => {
             btn.addEventListener('click', function() {
                 const qrId = this.dataset.id;
                 const qr = qrCodes.find(q => q.qrCodeId === qrId);
                 if (qr) {
-                    // Parse qrData string if needed
                     let qrData;
                     try {
                         qrData = typeof qr.qrData === 'string' ? JSON.parse(qr.qrData) : qr;
@@ -321,10 +506,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         qrData = qr;
                     }
                     
-                    qrcode.makeCode(JSON.stringify(qrData));
+                    generateQRCodeImage(qrData);
                     displayQRInfo(qrData);
                     document.getElementById('qrDisplay').style.display = 'block';
                     document.getElementById('qrDisplay').scrollIntoView({ behavior: 'smooth' });
+                    setupWhatsAppSharing(qrData);
                 }
             });
         });
@@ -334,7 +520,6 @@ document.addEventListener('DOMContentLoaded', function() {
         // Remove existing notifications
         document.querySelectorAll('.notification').forEach(n => n.remove());
         
-        // Create notification element
         const notification = document.createElement('div');
         notification.className = `notification ${type}`;
         notification.innerHTML = `
@@ -342,10 +527,8 @@ document.addEventListener('DOMContentLoaded', function() {
             <span>${message}</span>
         `;
         
-        // Add to page
         document.body.appendChild(notification);
         
-        // Remove after 3 seconds
         setTimeout(() => {
             notification.classList.add('fade-out');
             setTimeout(() => notification.remove(), 300);
@@ -357,7 +540,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const token = localStorage.getItem('token');
         
         if (!user || !token) {
-            // Redirect to login
             window.location.href = 'login.html';
             return;
         }
