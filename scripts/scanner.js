@@ -1,4 +1,4 @@
-// scanner.js - COMPLETE WORKING SCANNER WITH ANALYSIS
+// scanner.js - UPDATED FOR YOUR SERVER ENDPOINTS
 document.addEventListener('DOMContentLoaded', function() {
     const API_BASE_URL = 'https://zero0-1-r0xs.onrender.com';
     
@@ -9,9 +9,6 @@ document.addEventListener('DOMContentLoaded', function() {
     let scanInterval = null;
     let flashEnabled = false;
     let lastScannedData = null;
-    let scanAttempts = 0;
-    let successfulScans = 0;
-    let failedScans = 0;
     
     // DOM Elements
     const video = document.getElementById('scannerVideo');
@@ -31,26 +28,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const scanAgainBtn = document.getElementById('scanAgainBtn');
     const refreshScansBtn = document.getElementById('refreshScansBtn');
     const recentScansBody = document.getElementById('recentScansBody');
-    const totalScansToday = document.getElementById('totalScansToday');
-    const successfulScansEl = document.getElementById('successfulScans');
-    const failedScansEl = document.getElementById('failedScans');
-    
-    // QR Info Panel elements
-    const noScanMessage = document.getElementById('noScanMessage');
-    const qrDetails = document.getElementById('qrDetails');
-    const qrInfoElements = {
-        qrCodeId: document.getElementById('qrCodeId'),
-        qrUnitName: document.getElementById('qrUnitName'),
-        qrUnitCode: document.getElementById('qrUnitCode'),
-        qrClassType: document.getElementById('qrClassType'),
-        qrLecturer: document.getElementById('qrLecturer'),
-        qrTopic: document.getElementById('qrTopic'),
-        qrDuration: document.getElementById('qrDuration'),
-        qrGenerated: document.getElementById('qrGenerated'),
-        qrExpires: document.getElementById('qrExpires'),
-        qrStatus: document.getElementById('qrStatus'),
-        qrValidUntil: document.getElementById('qrValidUntil')
-    };
     
     // Initialize scanner
     initScanner();
@@ -72,11 +49,10 @@ document.addEventListener('DOMContentLoaded', function() {
     function initScanner() {
         console.log('Initializing QR scanner...');
         
-        // Initialize user data
-        initializeUser();
+        // Check authentication
+        checkAuth();
         
-        // Load statistics
-        loadStatistics();
+        // Load recent scans
         loadRecentScans();
         
         // Test backend connection
@@ -85,29 +61,29 @@ document.addEventListener('DOMContentLoaded', function() {
         updateScannerStatus('ready', 'Scanner ready to start');
     }
     
-    // Initialize user data
-    function initializeUser() {
-        if (!localStorage.getItem('studentUser')) {
-            const defaultUser = {
-                id: 'ST' + Date.now().toString().slice(-6),
-                name: 'Alice Johnson',
-                studentId: 'ST001',
-                role: 'Student',
-                email: 'alice@example.com'
-            };
-            localStorage.setItem('studentUser', JSON.stringify(defaultUser));
+    // Check authentication
+    function checkAuth() {
+        const user = localStorage.getItem('user');
+        const token = localStorage.getItem('token');
+        
+        if (!user || !token) {
+            // Redirect to login
+            window.location.href = 'login.html';
+            return;
         }
         
-        const user = JSON.parse(localStorage.getItem('studentUser'));
-        updateUserDisplay(user);
-    }
-    
-    // Update user display
-    function updateUserDisplay(user) {
-        document.getElementById('userName').textContent = user.name;
-        document.getElementById('userAvatar').textContent = getInitials(user.name);
-        document.getElementById('miniAvatar').textContent = getInitials(user.name);
-        document.getElementById('userRole').textContent = user.role;
+        try {
+            const userData = JSON.parse(user);
+            document.getElementById('userName').textContent = userData.name || 'Student';
+            document.getElementById('userAvatar').textContent = getInitials(userData.name);
+            document.getElementById('miniAvatar').textContent = getInitials(userData.name);
+            document.getElementById('userRole').textContent = userData.role || 'Student';
+            document.getElementById('scanStudentName').textContent = userData.name || 'Student';
+            document.getElementById('scanStudentId').textContent = userData.id || 'ST001';
+        } catch (error) {
+            console.error('Error parsing user data:', error);
+            window.location.href = 'login.html';
+        }
     }
     
     function getInitials(name) {
@@ -123,8 +99,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const constraints = {
                 video: {
                     facingMode: currentCamera,
-                    width: { ideal: 1280 },
-                    height: { ideal: 720 }
+                    width: { ideal: 640 },
+                    height: { ideal: 480 }
                 }
             };
             
@@ -135,10 +111,8 @@ document.addEventListener('DOMContentLoaded', function() {
             await video.play();
             
             // Set canvas dimensions
-            const track = videoStream.getVideoTracks()[0];
-            const settings = track.getSettings();
-            canvas.width = settings.width || video.videoWidth;
-            canvas.height = settings.height || video.videoHeight;
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
             
             console.log(`Canvas dimensions: ${canvas.width}x${canvas.height}`);
             
@@ -149,7 +123,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Start scanning loop
             isScanning = true;
-            scanInterval = setInterval(scanFrame, 200); // Scan every 200ms
+            scanInterval = setInterval(scanFrame, 300); // Scan every 300ms
             
             showNotification('Scanner started successfully!', 'success');
             
@@ -201,7 +175,6 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             
             if (code) {
-                scanAttempts++;
                 processQRCode(code.data);
             }
         } catch (error) {
@@ -247,28 +220,25 @@ document.addEventListener('DOMContentLoaded', function() {
             updateScannerStatus('success', 'QR code detected!');
             
             // Analyze QR code
-            await analyzeQRCode(qrData);
+            analyzeQRCode(qrData);
             
         } catch (error) {
             console.error('Error processing QR code:', error);
-            failedScans++;
-            updateStatistics();
-            
             updateScannerStatus('error', 'Invalid QR code');
-            showNotification('Invalid QR code format', 'error');
+            showNotification('Invalid QR code format: ' + error.message, 'error');
             
             // Resume scanning after 2 seconds
             setTimeout(() => {
                 if (!isScanning) {
                     isScanning = true;
-                    scanInterval = setInterval(scanFrame, 200);
+                    scanInterval = setInterval(scanFrame, 300);
                 }
             }, 2000);
         }
     }
     
     // Analyze QR code
-    async function analyzeQRCode(qrData) {
+    function analyzeQRCode(qrData) {
         console.log('Analyzing QR code:', qrData);
         
         // Display raw data
@@ -280,23 +250,16 @@ document.addEventListener('DOMContentLoaded', function() {
         // Validate QR code
         const validation = validateQRCode(qrData);
         
-        // Update info panel
-        updateQRInfoPanel(qrData, validation);
-        
         // Show scan result
         scanResult.style.display = 'block';
         saveAttendanceBtn.style.display = validation.isValid ? 'inline-block' : 'none';
         
         // Show notification
         if (validation.isValid) {
-            successfulScans++;
             showNotification(`✅ Valid QR code: ${qrData.unitName}`, 'success');
         } else {
-            failedScans++;
             showNotification(`❌ ${validation.message}`, 'error');
         }
-        
-        updateStatistics();
     }
     
     // Display raw QR data
@@ -361,62 +324,6 @@ document.addEventListener('DOMContentLoaded', function() {
         return { isValid, message, isValidDate, isActive };
     }
     
-    // Update QR info panel
-    function updateQRInfoPanel(qrData, validation) {
-        // Hide "no scan" message
-        noScanMessage.style.display = 'none';
-        qrDetails.style.display = 'block';
-        
-        // Update all fields
-        qrInfoElements.qrCodeId.textContent = qrData.qrCodeId || 'N/A';
-        qrInfoElements.qrUnitName.textContent = qrData.unitName || 'N/A';
-        qrInfoElements.qrUnitCode.textContent = qrData.unitCode || 'N/A';
-        qrInfoElements.qrClassType.textContent = qrData.classType || 'Lecture';
-        qrInfoElements.qrLecturer.textContent = qrData.lecturerName || qrData.lecturer || 'N/A';
-        qrInfoElements.qrTopic.textContent = qrData.topic || 'Not specified';
-        qrInfoElements.qrDuration.textContent = qrData.duration ? qrData.duration + ' minutes' : 'N/A';
-        qrInfoElements.qrGenerated.textContent = formatDate(qrData.createdAt);
-        qrInfoElements.qrExpires.textContent = formatDate(qrData.expiresAt || qrData.expiryTime);
-        qrInfoElements.qrValidUntil.textContent = calculateTimeRemaining(qrData.expiresAt || qrData.expiryTime);
-        
-        // Update status with color
-        let statusHtml = '';
-        if (validation.isValid) {
-            statusHtml = `<span class="valid-qr"><i class="fas fa-check-circle"></i> Valid</span>`;
-        } else {
-            statusHtml = `<span class="invalid-qr"><i class="fas fa-times-circle"></i> ${validation.message}</span>`;
-        }
-        qrInfoElements.qrStatus.innerHTML = statusHtml;
-    }
-    
-    // Format date
-    function formatDate(dateString) {
-        if (!dateString) return 'N/A';
-        const date = new Date(dateString);
-        return date.toLocaleString();
-    }
-    
-    // Calculate time remaining
-    function calculateTimeRemaining(expiryDate) {
-        if (!expiryDate) return 'N/A';
-        
-        const now = new Date();
-        const expiry = new Date(expiryDate);
-        const diffMs = expiry - now;
-        
-        if (diffMs <= 0) return 'Expired';
-        
-        const diffMins = Math.floor(diffMs / (1000 * 60));
-        const diffHours = Math.floor(diffMins / 60);
-        const remainingMins = diffMins % 60;
-        
-        if (diffHours > 0) {
-            return `${diffHours}h ${remainingMins}m remaining`;
-        } else {
-            return `${diffMins} minutes remaining`;
-        }
-    }
-    
     // Save attendance
     async function saveAttendance() {
         if (!lastScannedData) {
@@ -424,39 +331,45 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        const user = JSON.parse(localStorage.getItem('studentUser'));
+        const user = JSON.parse(localStorage.getItem('user'));
+        const token = localStorage.getItem('token');
+        
+        if (!user || !token) {
+            showNotification('Please login again', 'error');
+            window.location.href = 'login.html';
+            return;
+        }
         
         const attendanceData = {
-            studentId: user.studentId,
-            studentName: user.name,
-            qrCodeId: lastScannedData.qrCodeId,
-            unitCode: lastScannedData.unitCode,
-            unitName: lastScannedData.unitName,
-            classType: lastScannedData.classType,
-            lecturerName: lastScannedData.lecturerName || lastScannedData.lecturer,
-            scanTime: new Date().toISOString(),
-            status: 'present',
-            validated: true
+            qrCode: JSON.stringify(lastScannedData),
+            scanTime: new Date().toISOString()
         };
         
         console.log('Saving attendance:', attendanceData);
         
         try {
-            // Save to backend
-            const response = await fetch(`${API_BASE_URL}/api/attendance`, {
+            // Use YOUR ENDPOINT: /api/attendance/scan
+            const response = await fetch(`${API_BASE_URL}/api/attendance/scan`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify(attendanceData)
             });
             
+            const responseData = await response.json();
+            
             if (response.ok) {
-                const savedAttendance = await response.json();
-                console.log('Attendance saved:', savedAttendance);
+                console.log('Attendance saved:', responseData);
                 
                 // Save to localStorage
-                saveToLocalStorage(savedAttendance);
+                saveToLocalStorage({
+                    ...responseData.attendance,
+                    studentId: user.id,
+                    studentName: user.name,
+                    qrCodeId: lastScannedData.qrCodeId
+                });
                 
                 // Update recent scans
                 loadRecentScans();
@@ -470,8 +383,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 saveAttendanceBtn.disabled = true;
                 
             } else {
-                const errorText = await response.text();
-                throw new Error(`Server error: ${errorText}`);
+                throw new Error(responseData.message || 'Failed to save attendance');
             }
             
         } catch (error) {
@@ -485,19 +397,12 @@ document.addEventListener('DOMContentLoaded', function() {
         let attendanceRecords = JSON.parse(localStorage.getItem('attendanceRecords')) || [];
         attendanceRecords.push(attendance);
         localStorage.setItem('attendanceRecords', JSON.stringify(attendanceRecords));
-        
-        // Update today's scans in localStorage
-        let todayScans = JSON.parse(localStorage.getItem('todayScans')) || [];
-        todayScans.push(attendance);
-        localStorage.setItem('todayScans', JSON.stringify(todayScans));
     }
     
     // Scan again
     function scanAgain() {
         // Reset UI
         scanResult.style.display = 'none';
-        noScanMessage.style.display = 'block';
-        qrDetails.style.display = 'none';
         saveAttendanceBtn.innerHTML = '<i class="fas fa-check-circle"></i> Mark Attendance';
         saveAttendanceBtn.className = 'btn btn-success';
         saveAttendanceBtn.disabled = false;
@@ -589,36 +494,47 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Load recent scans
     async function loadRecentScans() {
-        const user = JSON.parse(localStorage.getItem('studentUser'));
+        const user = JSON.parse(localStorage.getItem('user'));
+        const token = localStorage.getItem('token');
+        
+        if (!user || !token) return;
         
         try {
-            // Try to get from backend
-            const response = await fetch(`${API_BASE_URL}/api/attendance/student/${user.studentId}`);
+            // Use YOUR ENDPOINT: /api/students/:id/attendance
+            const response = await fetch(`${API_BASE_URL}/api/students/${user.id}/attendance`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            
             let scans = [];
             
             if (response.ok) {
-                scans = await response.json();
+                const data = await response.json();
+                scans = data.attendance || [];
             } else {
                 // Fallback to localStorage
                 scans = JSON.parse(localStorage.getItem('attendanceRecords')) || [];
             }
             
             // Display recent scans (last 10)
-            displayRecentScans(scans.slice(-10).reverse());
+            displayRecentScans(scans.slice(0, 10));
             
         } catch (error) {
             console.error('Error loading recent scans:', error);
             const scans = JSON.parse(localStorage.getItem('attendanceRecords')) || [];
-            displayRecentScans(scans.slice(-10).reverse());
+            displayRecentScans(scans.slice(0, 10));
         }
     }
     
     // Display recent scans
     function displayRecentScans(scans) {
-        if (!scans.length) {
+        if (!recentScansBody) return;
+        
+        if (scans.length === 0) {
             recentScansBody.innerHTML = `
                 <tr>
-                    <td colspan="3" class="text-center text-muted">
+                    <td colspan="5" class="text-center text-muted">
                         No attendance records yet
                     </td>
                 </tr>
@@ -627,42 +543,24 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         let html = '';
+        
         scans.forEach(scan => {
-            const time = new Date(scan.scanTime).toLocaleTimeString([], { 
-                hour: '2-digit', 
-                minute: '2-digit' 
-            });
+            const scanDate = new Date(scan.scanTime || scan.date + ' ' + scan.time);
+            const dateStr = scanDate.toLocaleDateString();
+            const timeStr = scanDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
             
             html += `
                 <tr>
-                    <td>${time}</td>
-                    <td>
-                        <strong>${scan.unitCode}</strong><br>
-                        <small class="text-muted">${scan.unitName}</small>
-                    </td>
-                    <td>
-                        <span class="badge badge-success">Present</span>
-                    </td>
+                    <td>${dateStr}</td>
+                    <td>${timeStr}</td>
+                    <td>${scan.unitCode || 'N/A'}<br><small class="text-muted">${scan.unitName || ''}</small></td>
+                    <td>${scan.lecturerName || 'Unknown'}</td>
+                    <td><span class="badge badge-success">${scan.status || 'Present'}</span></td>
                 </tr>
             `;
         });
         
         recentScansBody.innerHTML = html;
-    }
-    
-    // Load statistics
-    function loadStatistics() {
-        const todayScans = JSON.parse(localStorage.getItem('todayScans')) || [];
-        totalScansToday.textContent = todayScans.length;
-        successfulScansEl.textContent = todayScans.filter(s => s.validated).length;
-        failedScansEl.textContent = todayScans.filter(s => !s.validated).length;
-    }
-    
-    // Update statistics
-    function updateStatistics() {
-        totalScansToday.textContent = scanAttempts;
-        successfulScansEl.textContent = successfulScans;
-        failedScansEl.textContent = failedScans;
     }
     
     // Update scanner status
@@ -724,7 +622,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Test backend connection
     async function testBackendConnection() {
         try {
-            const response = await fetch(`${API_BASE_URL}/api/qrcodes`);
+            const response = await fetch(`${API_BASE_URL}/api/health`);
             if (response.ok) {
                 console.log('Backend connection successful');
                 showNotification('Connected to attendance system', 'success');
@@ -804,20 +702,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 opacity: 0;
             }
         }
-        .stat-box {
-            padding: 15px;
-            border-radius: 8px;
-            background: #f8f9fa;
-        }
-        .stat-box h3 {
-            margin: 0;
-            font-size: 24px;
-            font-weight: 700;
-        }
-        .stat-box small {
-            color: #6c757d;
-            font-size: 12px;
-        }
     `;
     document.head.appendChild(style);
     
@@ -838,4 +722,11 @@ document.addEventListener('DOMContentLoaded', function() {
             clearInterval(scanInterval);
         }
     });
+    
+    // Format date
+    function formatDate(dateString) {
+        if (!dateString) return 'N/A';
+        const date = new Date(dateString);
+        return date.toLocaleString();
+    }
 });
