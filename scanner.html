@@ -10,6 +10,194 @@
     <link rel="stylesheet" href="styles/dashboard.css">
     <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    <style>
+        /* Scanner-specific styles */
+        .scanner-view {
+            width: 100%;
+            height: 400px;
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+            margin-bottom: 20px;
+        }
+        
+        #scannerVideo {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .scanner-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        
+        .scanner-frame {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 250px;
+            height: 250px;
+            border: 3px solid #00ff00;
+            border-radius: 8px;
+            box-shadow: 0 0 0 10000px rgba(0, 0, 0, 0.5);
+            animation: pulse 2s infinite;
+        }
+        
+        .scanner-hint {
+            position: absolute;
+            bottom: 30px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            color: white;
+            font-weight: 500;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+            font-size: 16px;
+        }
+        
+        .scanner-status {
+            position: absolute;
+            top: 20px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            color: white;
+            font-size: 14px;
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+        }
+        
+        @keyframes pulse {
+            0% { border-color: #00ff00; box-shadow: 0 0 0 10000px rgba(0, 0, 0, 0.5); }
+            50% { border-color: #00cc00; box-shadow: 0 0 0 10000px rgba(0, 0, 0, 0.6); }
+            100% { border-color: #00ff00; box-shadow: 0 0 0 10000px rgba(0, 0, 0, 0.5); }
+        }
+        
+        .scan-result {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .qr-analysis {
+            margin-top: 20px;
+        }
+        
+        .qr-data-display {
+            background: #f8f9fa;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .qr-field {
+            display: flex;
+            margin-bottom: 8px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .qr-label {
+            font-weight: 600;
+            min-width: 120px;
+            color: #495057;
+        }
+        
+        .qr-value {
+            flex: 1;
+            color: #212529;
+        }
+        
+        .valid-qr { color: #28a745; }
+        .expired-qr { color: #dc3545; }
+        .invalid-qr { color: #dc3545; }
+        .active-qr { color: #28a745; }
+        .inactive-qr { color: #6c757d; }
+        
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .status-scanning { background: #fff3cd; color: #856404; }
+        .status-success { background: #d4edda; color: #155724; }
+        .status-error { background: #f8d7da; color: #721c24; }
+        .status-idle { background: #e2e3e5; color: #383d41; }
+        
+        .btn-scanner {
+            padding: 12px 24px;
+            font-size: 16px;
+            margin: 5px;
+        }
+        
+        .scanner-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        
+        #scannerCanvas {
+            display: none;
+        }
+        
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            padding: 30px;
+            position: relative;
+        }
+        
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #6c757d;
+        }
+        
+        .modal-close:hover {
+            color: #343a40;
+        }
+    </style>
 </head>
 <body>
     <!-- Sidebar -->
@@ -51,11 +239,11 @@
                     <i class="fas fa-qrcode"></i>
                     <span>Scan QR Code</span>
                 </a>
-                <a href="#" class="menu-item" id="attendanceHistory">
+                <a href="attendance-history.html" class="menu-item">
                     <i class="fas fa-history"></i>
                     <span>Attendance History</span>
                 </a>
-                <a href="#" class="menu-item" id="myCourses">
+                <a href="my-courses.html" class="menu-item">
                     <i class="fas fa-book"></i>
                     <span>My Courses</span>
                 </a>
@@ -84,8 +272,8 @@
                     <i class="fas fa-bars"></i>
                 </button>
                 <div class="page-title">
-                    <h1>Scan QR Code</h1>
-                    <small>Mark your attendance by scanning QR code</small>
+                    <h1>QR Code Scanner</h1>
+                    <small>Scan and analyze QR codes for attendance</small>
                 </div>
             </div>
             <div class="header-right">
@@ -104,83 +292,207 @@
         <div class="content-area" id="contentArea">
             <div class="container-fluid">
                 <div class="row">
-                    <div class="col-lg-6">
-                        <!-- QR Scanner -->
+                    <div class="col-lg-7">
+                        <!-- Scanner Section -->
                         <div class="card">
                             <div class="card-header">
-                                <h3 class="card-title">QR Code Scanner</h3>
+                                <h3 class="card-title">
+                                    <i class="fas fa-camera"></i> Live QR Scanner
+                                </h3>
+                                <div class="scanner-status" id="scannerStatus">
+                                    <span class="status-indicator status-idle">
+                                        <i class="fas fa-circle"></i> Scanner Ready
+                                    </span>
+                                </div>
                             </div>
-                            <div class="card-body text-center">
-                                <div id="scannerView" class="scanner-view">
-                                    <div class="scanner-placeholder">
-                                        <i class="fas fa-qrcode"></i>
-                                        <p>Ready to scan</p>
-                                        <p class="small">Press "Start Scanner" to begin</p>
+                            <div class="card-body">
+                                <!-- Scanner View -->
+                                <div class="scanner-view">
+                                    <video id="scannerVideo" autoplay playsinline></video>
+                                    <canvas id="scannerCanvas"></canvas>
+                                    <div class="scanner-overlay">
+                                        <div class="scanner-frame"></div>
+                                        <div class="scanner-hint">
+                                            Position QR code inside the frame
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="mt-3">
-                                    <button class="btn btn-primary" id="startScannerBtn">
+                                
+                                <!-- Scanner Controls -->
+                                <div class="scanner-controls">
+                                    <button class="btn btn-primary btn-scanner" id="startScannerBtn">
                                         <i class="fas fa-play"></i> Start Scanner
                                     </button>
-                                    <button class="btn btn-danger" id="stopScannerBtn" style="display: none;">
+                                    <button class="btn btn-danger btn-scanner" id="stopScannerBtn" style="display: none;">
                                         <i class="fas fa-stop"></i> Stop Scanner
                                     </button>
-                                    <button class="btn btn-outline" id="manualEntryBtn">
+                                    <button class="btn btn-info btn-scanner" id="switchCameraBtn">
+                                        <i class="fas fa-sync"></i> Switch Camera
+                                    </button>
+                                    <button class="btn btn-warning btn-scanner" id="flashToggleBtn">
+                                        <i class="fas fa-lightbulb"></i> Flash
+                                    </button>
+                                    <button class="btn btn-secondary btn-scanner" id="manualEntryBtn">
                                         <i class="fas fa-keyboard"></i> Manual Entry
                                     </button>
-                                    <button class="btn btn-warning" id="testScanBtn">
-                                        <i class="fas fa-bolt"></i> Test Scan
+                                    <button class="btn btn-success btn-scanner" id="testScanBtn">
+                                        <i class="fas fa-vial"></i> Test Scan
                                     </button>
                                 </div>
-                                <div id="scanResult" class="mt-3"></div>
+                                
+                                <!-- Real-time Analysis -->
+                                <div class="scan-result" id="scanResult" style="display: none;">
+                                    <h4><i class="fas fa-chart-bar"></i> QR Code Analysis</h4>
+                                    <div class="qr-analysis">
+                                        <div class="qr-data-display" id="qrDataDisplay">
+                                            <!-- QR data will be displayed here -->
+                                        </div>
+                                        
+                                        <div id="qrFields">
+                                            <!-- Dynamic fields will be added here -->
+                                        </div>
+                                        
+                                        <div class="mt-3">
+                                            <button class="btn btn-success" id="saveAttendanceBtn" style="display: none;">
+                                                <i class="fas fa-check-circle"></i> Mark Attendance
+                                            </button>
+                                            <button class="btn btn-secondary" id="scanAgainBtn">
+                                                <i class="fas fa-redo"></i> Scan Again
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="col-lg-6">
-                        <!-- Recent Scans -->
+                    <div class="col-lg-5">
+                        <!-- QR Information Panel -->
                         <div class="card">
                             <div class="card-header">
-                                <h3 class="card-title">Recent Attendance</h3>
-                                <div class="card-actions">
-                                    <button class="btn btn-sm btn-outline" id="refreshScansBtn">
-                                        <i class="fas fa-sync"></i> Refresh
-                                    </button>
+                                <h3 class="card-title">
+                                    <i class="fas fa-info-circle"></i> QR Code Information
+                                </h3>
+                            </div>
+                            <div class="card-body">
+                                <div id="qrInfoPanel">
+                                    <div class="text-center text-muted" id="noScanMessage">
+                                        <i class="fas fa-qrcode fa-3x mb-3"></i>
+                                        <p>No QR code scanned yet</p>
+                                        <small>Scan a QR code to view detailed information</small>
+                                    </div>
+                                    
+                                    <div id="qrDetails" style="display: none;">
+                                        <h5 class="mb-3">Class Details</h5>
+                                        <div class="qr-field">
+                                            <span class="qr-label">QR Code ID:</span>
+                                            <span class="qr-value" id="qrCodeId">-</span>
+                                        </div>
+                                        <div class="qr-field">
+                                            <span class="qr-label">Unit Name:</span>
+                                            <span class="qr-value" id="qrUnitName">-</span>
+                                        </div>
+                                        <div class="qr-field">
+                                            <span class="qr-label">Unit Code:</span>
+                                            <span class="qr-value" id="qrUnitCode">-</span>
+                                        </div>
+                                        <div class="qr-field">
+                                            <span class="qr-label">Class Type:</span>
+                                            <span class="qr-value" id="qrClassType">-</span>
+                                        </div>
+                                        <div class="qr-field">
+                                            <span class="qr-label">Lecturer:</span>
+                                            <span class="qr-value" id="qrLecturer">-</span>
+                                        </div>
+                                        <div class="qr-field">
+                                            <span class="qr-label">Topic:</span>
+                                            <span class="qr-value" id="qrTopic">-</span>
+                                        </div>
+                                        <div class="qr-field">
+                                            <span class="qr-label">Duration:</span>
+                                            <span class="qr-value" id="qrDuration">-</span>
+                                        </div>
+                                        <div class="qr-field">
+                                            <span class="qr-label">Generated:</span>
+                                            <span class="qr-value" id="qrGenerated">-</span>
+                                        </div>
+                                        <div class="qr-field">
+                                            <span class="qr-label">Expires:</span>
+                                            <span class="qr-value" id="qrExpires">-</span>
+                                        </div>
+                                        <div class="qr-field">
+                                            <span class="qr-label">Status:</span>
+                                            <span class="qr-value" id="qrStatus">-</span>
+                                        </div>
+                                        <div class="qr-field">
+                                            <span class="qr-label">Valid Until:</span>
+                                            <span class="qr-value" id="qrValidUntil">-</span>
+                                        </div>
+                                    </div>
                                 </div>
+                            </div>
+                        </div>
+
+                        <!-- Recent Scans -->
+                        <div class="card mt-4">
+                            <div class="card-header">
+                                <h3 class="card-title">
+                                    <i class="fas fa-history"></i> Recent Scans
+                                </h3>
+                                <button class="btn btn-sm btn-outline" id="refreshScansBtn">
+                                    <i class="fas fa-sync"></i>
+                                </button>
                             </div>
                             <div class="card-body">
                                 <div class="table-responsive">
                                     <table class="table">
                                         <thead>
                                             <tr>
-                                                <th>Date</th>
                                                 <th>Time</th>
                                                 <th>Unit</th>
-                                                <th>Lecturer</th>
                                                 <th>Status</th>
                                             </tr>
                                         </thead>
                                         <tbody id="recentScansBody">
-                                            <!-- Scans will be loaded here -->
+                                            <tr>
+                                                <td colspan="3" class="text-center text-muted">
+                                                    No scans yet
+                                                </td>
+                                            </tr>
                                         </tbody>
                                     </table>
                                 </div>
                             </div>
                         </div>
-
-                        <!-- Instructions -->
-                        <div class="card">
+                        
+                        <!-- Statistics -->
+                        <div class="card mt-4">
                             <div class="card-header">
-                                <h3 class="card-title">Instructions</h3>
+                                <h3 class="card-title">
+                                    <i class="fas fa-chart-pie"></i> Today's Statistics
+                                </h3>
                             </div>
                             <div class="card-body">
-                                <ol class="mb-0">
-                                    <li>Click "Start Scanner" to activate camera</li>
-                                    <li>Point camera at QR code displayed by lecturer</li>
-                                    <li>Hold steady until scan is successful</li>
-                                    <li>Attendance will be automatically recorded</li>
-                                    <li>Use "Manual Entry" if camera is unavailable</li>
-                                </ol>
+                                <div class="row text-center">
+                                    <div class="col-4">
+                                        <div class="stat-box">
+                                            <h3 id="totalScansToday">0</h3>
+                                            <small>Total Scans</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="stat-box">
+                                            <h3 id="successfulScans">0</h3>
+                                            <small>Successful</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="stat-box">
+                                            <h3 id="failedScans">0</h3>
+                                            <small>Failed</small>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -191,32 +503,54 @@
 
     <!-- Manual Entry Modal -->
     <div class="modal" id="manualEntryModal">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Manual QR Code Entry</h5>
-                    <button type="button" class="btn-close" onclick="closeManualEntry()">×</button>
-                </div>
-                <div class="modal-body">
-                    <div class="form-group">
-                        <label for="manualQRCode">Enter QR Code Data</label>
-                        <textarea id="manualQRCode" class="form-control" rows="4" 
-                                  placeholder='Paste QR code data (JSON format) or scan output'></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" onclick="closeManualEntry()">Cancel</button>
-                    <button type="button" class="btn btn-primary" onclick="submitManualEntry()">Submit</button>
-                </div>
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeManualEntry()">×</button>
+            <h4><i class="fas fa-keyboard"></i> Manual QR Code Entry</h4>
+            <p class="text-muted">Enter QR code data manually</p>
+            
+            <div class="form-group">
+                <label for="manualQRCode">QR Code Data (JSON format):</label>
+                <textarea id="manualQRCode" class="form-control" rows="6" 
+                          placeholder='{"qrCodeId": "QR_123", "unitName": "Calculus", ...}'></textarea>
+            </div>
+            
+            <div class="mt-3">
+                <button class="btn btn-secondary" onclick="closeManualEntry()">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button class="btn btn-primary" onclick="submitManualEntry()">
+                    <i class="fas fa-check"></i> Submit
+                </button>
             </div>
         </div>
     </div>
 
     <!-- Scripts -->
     <script src="scripts/scanner.js"></script>
-    <script src="scripts/auth.js"></script>
+    <script>
+        // Initialize sidebar toggle
+        document.getElementById('menuToggle').addEventListener('click', function() {
+            document.getElementById('sidebar').classList.toggle('active');
+        });
+        
+        document.getElementById('sidebarClose').addEventListener('click', function() {
+            document.getElementById('sidebar').classList.remove('active');
+        });
+        
+        // Logout function
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                localStorage.removeItem('studentUser');
+                window.location.href = 'login.html';
+            }
+        }
+        
+        // Close modal with escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeManualEntry();
+            }
+        });
+    </script>
 </body>
 </html>
-
-
-
